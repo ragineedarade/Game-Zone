@@ -1,4 +1,5 @@
- # 🎮 Game Zone – All-in-One Free Game Platform  
+ # 🎮 Game Zone 
+ All-in-One Free Game Platform  
 
 Welcome to **Game Zone** — a collection of **20+ fun and interactive games** 🎯 that are completely **free to play**!  
 From traditional classics to addictive arcade fun, **Game Zone** has something for everyone.  
