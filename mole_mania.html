@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mole Masher</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Bangers&display=swap");
+
+      :root {
+        --green: #4caf50;
+        --dark-green: #388e3c;
+        --brown: #a1887f;
+        --dark-brown: #5d4037;
+        --yellow: #ffc107;
+        --orange: #ff5722;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f4c3;
+        font-family: "Bangers", sans-serif;
+        text-shadow: 2px 2px 0 var(--dark-green);
+        color: var(
+          --dark-brown
+        ); /* Changed from white to dark brown for better contrast */
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      .game-title {
+        font-size: 4rem;
+        text-align: center;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+      }
+
+      .game-info {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+        max-width: 500px;
+        margin-bottom: 20px;
+        font-size: 2rem;
+        text-align: center;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        background-color: var(--dark-brown);
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .hole {
+        width: 100%;
+        padding-bottom: 100%; /* Creates a square aspect ratio */
+        background-color: var(--brown);
+        border-radius: 50%;
+        position: relative;
+        overflow: hidden;
+        border: 5px solid var(--dark-brown);
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+      }
+
+      .mole {
+        width: 80%;
+        height: 80%;
+        position: absolute;
+        bottom: -80%; /* Start hidden below the hole */
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--orange);
+        border-radius: 50%;
+        border: 5px solid var(--yellow);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        transition: bottom 0.2s ease-in-out;
+        pointer-events: none; /* Prevents clicking on the mole itself */
+      }
+
+      .mole.up {
+        bottom: 5%;
+        pointer-events: auto; /* Enable clicking when up */
+      }
+
+      /* Game Over Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background-color: var(--green);
+        color: white;
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        max-width: 90%;
+      }
+
+      .modal-title {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 0 var(--dark-green);
+      }
+
+      .modal-score {
+        font-size: 2.5rem;
+        margin-bottom: 30px;
+      }
+
+      .button {
+        background-color: var(--yellow);
+        color: var(--dark-brown);
+        border: none;
+        padding: 15px 30px;
+        font-size: 1.5rem;
+        border-radius: 10px;
+        cursor: pointer;
+        text-shadow: none;
+        box-shadow: 0 5px 0 var(--orange);
+        transition: transform 0.1s, box-shadow 0.1s;
+      }
+
+      .button:active {
+        transform: translateY(2px);
+        box-shadow: 0 3px 0 var(--orange);
+      }
+
+      @media (max-width: 600px) {
+        .game-title {
+          font-size: 3rem;
+        }
+        .game-info {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="game-title">Mole Mania!</h1>
+
+    <div class="game-info">
+      <div>Score: <span id="score">0</span></div>
+      <div>Time: <span id="time">30</span>s</div>
+    </div>
+
+    <div class="board" id="board">
+      <div class="hole"><div class="mole" data-id="0"></div></div>
+      <div class="hole"><div class="mole" data-id="1"></div></div>
+      <div class="hole"><div class="mole" data-id="2"></div></div>
+      <div class="hole"><div class="mole" data-id="3"></div></div>
+      <div class="hole"><div class="mole" data-id="4"></div></div>
+      <div class="hole"><div class="mole" data-id="5"></div></div>
+      <div class="hole"><div class="mole" data-id="6"></div></div>
+      <div class="hole"><div class="mole" data-id="7"></div></div>
+      <div class="hole"><div class="mole" data-id="8"></div></div>
+    </div>
+
+    <div class="modal-overlay" id="gameOverModal">
+      <div class="modal-content">
+        <h2 class="modal-title">Game Over!</h2>
+        <p class="modal-score">Your Score: <span id="finalScore">0</span></p>
+        <button class="button" onclick="startGame()">Play Again</button>
+      </div>
+    </div>
+
+    <script>
+      const holes = document.querySelectorAll(".hole");
+      const moles = document.querySelectorAll(".mole");
+      const scoreDisplay = document.getElementById("score");
+      const timeDisplay = document.getElementById("time");
+      const finalScoreDisplay = document.getElementById("finalScore");
+      const gameOverModal = document.getElementById("gameOverModal");
+
+      let lastHole;
+      let timeUp = false;
+      let score = 0;
+      let timeRemaining = 30;
+      let timerId;
+
+      // Function to get a random time for mole to appear
+      function randomTime(min, max) {
+        return Math.round(Math.random() * (max - min) + min);
+      }
+
+      // Function to pick a random hole without repeating the previous one
+      function randomHole(holes) {
+        const idx = Math.floor(Math.random() * holes.length);
+        const hole = holes[idx];
+        if (hole === lastHole) {
+          return randomHole(holes);
+        }
+        lastHole = hole;
+        return hole;
+      }
+
+      // Function to make a mole pop up
+      function peep() {
+        const time = randomTime(500, 1500);
+        const hole = randomHole(holes);
+        const mole = hole.querySelector(".mole");
+        mole.classList.add("up");
+        setTimeout(() => {
+          mole.classList.remove("up");
+          if (!timeUp) peep();
+        }, time);
+      }
+
+      // Function to start the game
+      function startGame() {
+        gameOverModal.style.display = "none";
+        score = 0;
+        timeRemaining = 30;
+        timeUp = false;
+        scoreDisplay.textContent = score;
+        timeDisplay.textContent = timeRemaining;
+
+        peep();
+
+        timerId = setInterval(() => {
+          timeRemaining--;
+          timeDisplay.textContent = timeRemaining;
+          if (timeRemaining <= 0) {
+            clearInterval(timerId);
+            timeUp = true;
+            showGameOver();
+          }
+        }, 1000);
+      }
+
+      // Function to handle a mole click
+      function whack(e) {
+        // Check if the click is on a visible mole
+        if (!e.target.classList.contains("up")) return;
+        score++;
+        this.classList.remove("up"); // Hide the mole immediately
+        scoreDisplay.textContent = score;
+      }
+
+      // Function to show the game over modal
+      function showGameOver() {
+        finalScoreDisplay.textContent = score;
+        gameOverModal.style.display = "flex";
+      }
+
+      // Add event listeners to all holes for clicking
+      moles.forEach((mole) => mole.addEventListener("click", whack));
+
+      // Start the game when the page loads
+      window.onload = startGame;
+    </script>
+  </body>
+</html>

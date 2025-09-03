@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Galaxy Jumper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Import a sci-fi inspired font */
+      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap");
+
+      body {
+        font-family: "Space Grotesk", sans-serif;
+        background: linear-gradient(135deg, #0a0a1a 0%, #1a1a33 100%);
+        color: #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+        overflow: hidden;
+        text-align: center;
+        position: relative;
+      }
+
+      .game-container {
+        background-color: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(5px);
+        border-radius: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        padding: 2rem;
+        max-width: 600px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 2px 2px 5px rgba(0, 200, 255, 0.5);
+        color: #00c8ff;
+      }
+
+      .stats-bar {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 1rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      canvas {
+        border: 5px solid rgba(0, 200, 255, 0.5);
+        border-radius: 1rem;
+        background-color: #050510;
+        box-shadow: inset 0 0 15px rgba(0, 200, 255, 0.2);
+        cursor: pointer;
+      }
+
+      .start-button {
+        background: linear-gradient(45deg, #00c8ff, #0088ff);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 5px 15px rgba(0, 150, 255, 0.4);
+      }
+
+      .start-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(0, 150, 255, 0.6);
+      }
+
+      .start-button:active {
+        transform: scale(0.95);
+      }
+
+      /* Message box styling for pop-up messages */
+      .message-box {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.85);
+        padding: 2.5rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 0 40px rgba(0, 200, 255, 0.3);
+        z-index: 10;
+        border: 2px solid #00c8ff;
+        text-align: center;
+      }
+
+      .message-box h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #fff;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      /* Dynamic difficulty message */
+      .difficulty-message {
+        position: absolute;
+        top: 10%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        z-index: 20;
+      }
+
+      .difficulty-message.show {
+        opacity: 1;
+      }
+
+      /* Player and Obstacle styling using pure CSS/SVG */
+      .player-svg,
+      .obstacle-svg {
+        position: absolute;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Galaxy Jumper</h1>
+      <div class="stats-bar">
+        <span>Score: <span id="score-display">0</span></span>
+      </div>
+      <canvas id="gameCanvas"></canvas>
+      <button id="startButton" class="start-button">Start Game</button>
+    </div>
+
+    <div id="messageBox" class="message-box hidden">
+      <h2 id="message-text"></h2>
+      <p>Your final score is: <span id="final-score">0</span></p>
+      <button id="restartButton" class="start-button mt-4">Play Again</button>
+    </div>
+
+    <div id="difficultyMessage" class="difficulty-message"></div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const startButton = document.getElementById("startButton");
+      const restartButton = document.getElementById("restartButton");
+      const messageBox = document.getElementById("messageBox");
+      const messageText = document.getElementById("message-text");
+      const finalScore = document.getElementById("final-score");
+      const scoreDisplay = document.getElementById("score-display");
+      const difficultyMessage = document.getElementById("difficultyMessage");
+
+      // Game state variables
+      let score = 0;
+      let gameSpeed = 5;
+      let isGameRunning = false;
+      let lastTime = 0;
+      let obstacleSpawnTimer = 0;
+      let obstacleSpawnInterval = 1000; // ms
+      let difficultyLevel = 0;
+
+      // Player class
+      class Player {
+        constructor(x, y, size) {
+          this.x = x;
+          this.y = y;
+          this.size = size;
+          this.yVelocity = 0;
+          this.isJumping = false;
+          this.gravity = 0.5;
+          this.jumpStrength = -12;
+        }
+
+        update() {
+          // Apply gravity
+          this.yVelocity += this.gravity;
+          this.y += this.yVelocity;
+
+          // Ground collision
+          if (this.y + this.size > canvas.height) {
+            this.y = canvas.height - this.size;
+            this.yVelocity = 0;
+            this.isJumping = false;
+          }
+        }
+
+        draw() {
+          ctx.fillStyle = "#00c8ff";
+          ctx.beginPath();
+          ctx.arc(
+            this.x + this.size / 2,
+            this.y + this.size / 2,
+            this.size / 2,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
+
+        jump() {
+          if (!this.isJumping) {
+            this.yVelocity = this.jumpStrength;
+            this.isJumping = true;
+          }
+        }
+      }
+
+      // Obstacle class (triangles)
+      class Obstacle {
+        constructor(x, y, width, height) {
+          this.x = x;
+          this.y = y;
+          this.width = width;
+          this.height = height;
+        }
+
+        update() {
+          this.x -= gameSpeed;
+        }
+
+        draw() {
+          ctx.fillStyle = "#ff3366";
+          ctx.beginPath();
+          ctx.moveTo(this.x + this.width / 2, this.y);
+          ctx.lineTo(this.x + this.width, this.y + this.height);
+          ctx.lineTo(this.x, this.y + this.height);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // DifficultyObject class (spinning discs)
+      class DifficultyObject {
+        constructor(x, y, size, rotationSpeed) {
+          this.x = x;
+          this.y = y;
+          this.size = size;
+          this.rotation = 0;
+          this.rotationSpeed = rotationSpeed;
+        }
+
+        update() {
+          // Move object and increase rotation
+          this.x -= gameSpeed * 1.2; // Move slightly faster
+          this.rotation += this.rotationSpeed;
+        }
+
+        draw() {
+          ctx.fillStyle = "#ffcc00";
+          ctx.save();
+          ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
+          ctx.rotate(this.rotation);
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      let player;
+      let obstacles = [];
+
+      // Resize canvas on window resize
+      function resizeCanvas() {
+        canvas.width = Math.min(550, window.innerWidth - 40);
+        canvas.height = 200;
+        if (player) {
+          player.x = 50;
+          player.y = canvas.height - player.size;
+        }
+      }
+
+      // Show a temporary message for difficulty increase
+      function showDifficultyMessage(message) {
+        difficultyMessage.textContent = message;
+        difficultyMessage.classList.add("show");
+        setTimeout(() => {
+          difficultyMessage.classList.remove("show");
+        }, 1500); // Hide after 1.5 seconds
+      }
+
+      // Initialize game
+      function initializeGame() {
+        score = 0;
+        gameSpeed = 5;
+        obstacleSpawnInterval = 1000;
+        difficultyLevel = 0;
+        obstacles = [];
+        player = new Player(50, canvas.height - 30, 30);
+        scoreDisplay.textContent = score;
+        messageBox.classList.add("hidden");
+        startButton.classList.add("hidden");
+      }
+
+      // Game loop
+      function gameLoop(currentTime) {
+        if (!isGameRunning) return;
+
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+        const currentScore = Math.floor(score / 10);
+
+        // Check for difficulty increases
+        if (difficultyLevel === 0 && currentScore >= 150) {
+          difficultyLevel = 1;
+          gameSpeed = 7;
+          obstacleSpawnInterval = 800;
+          showDifficultyMessage("Difficulty Increased!");
+        } else if (difficultyLevel === 1 && currentScore >= 300) {
+          difficultyLevel = 2;
+          gameSpeed = 9;
+          obstacleSpawnInterval = 600;
+          showDifficultyMessage("Max Difficulty!");
+        } else if (difficultyLevel === 2 && currentScore >= 450) {
+          difficultyLevel = 3;
+          gameSpeed = 10;
+          obstacleSpawnInterval = 500;
+          showDifficultyMessage("New Obstacles Detected!");
+        }
+
+        // Update all obstacles
+        obstacles.forEach((obstacle) => obstacle.update());
+
+        // Remove off-screen obstacles
+        obstacles = obstacles.filter(
+          (obstacle) => obstacle.x + (obstacle.width || obstacle.size) > 0
+        );
+
+        // Spawn new obstacles
+        obstacleSpawnTimer += deltaTime;
+        if (obstacleSpawnTimer >= obstacleSpawnInterval) {
+          const spawnType = Math.random();
+          // Spawn a new type of obstacle if difficulty level is high enough
+          if (difficultyLevel >= 3 && spawnType > 0.6) {
+            const obstacleSize = 25 + Math.random() * 15;
+            const rotationSpeed = (Math.random() - 0.5) * 0.2; // Random rotation direction
+            obstacles.push(
+              new DifficultyObject(
+                canvas.width,
+                canvas.height - obstacleSize,
+                obstacleSize,
+                rotationSpeed
+              )
+            );
+          } else {
+            const obstacleWidth = 20 + Math.random() * 40;
+            const obstacleHeight = 20 + Math.random() * 40;
+            obstacles.push(
+              new Obstacle(
+                canvas.width,
+                canvas.height - obstacleHeight,
+                obstacleWidth,
+                obstacleHeight
+              )
+            );
+          }
+          obstacleSpawnTimer = 0;
+        }
+
+        // Collision detection
+        const playerRect = {
+          x: player.x,
+          y: player.y,
+          width: player.size,
+          height: player.size,
+        };
+        obstacles.forEach((obstacle) => {
+          let obstacleRect;
+          if (obstacle instanceof Obstacle) {
+            obstacleRect = {
+              x: obstacle.x,
+              y: obstacle.y,
+              width: obstacle.width,
+              height: obstacle.height,
+            };
+          } else if (obstacle instanceof DifficultyObject) {
+            obstacleRect = {
+              x: obstacle.x,
+              y: obstacle.y,
+              width: obstacle.size,
+              height: obstacle.size,
+            };
+          }
+
+          if (
+            playerRect.x < obstacleRect.x + obstacleRect.width &&
+            playerRect.x + playerRect.width > obstacleRect.x &&
+            playerRect.y < obstacleRect.y + obstacleRect.height &&
+            playerRect.height + playerRect.y > obstacleRect.y
+          ) {
+            endGame();
+          }
+        });
+
+        // Update player and score
+        player.update();
+        score++;
+        scoreDisplay.textContent = currentScore;
+
+        // Draw everything
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        player.draw();
+        obstacles.forEach((obstacle) => obstacle.draw());
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start the game
+      function startGame() {
+        initializeGame();
+        isGameRunning = true;
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
+
+      // End the game
+      function endGame() {
+        isGameRunning = false;
+        messageText.textContent = "Game Over!";
+        finalScore.textContent = Math.floor(score / 10);
+        messageBox.classList.remove("hidden");
+        restartButton.classList.remove("hidden");
+      }
+
+      // Event Listeners
+      window.addEventListener("resize", resizeCanvas);
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.code === "ArrowUp") {
+          player.jump();
+        }
+      });
+      canvas.addEventListener("click", () => player.jump());
+      startButton.addEventListener("click", startGame);
+      restartButton.addEventListener("click", startGame);
+
+      window.onload = () => {
+        resizeCanvas();
+        messageText.textContent =
+          "Press the start button to begin your galactic adventure!";
+        messageBox.classList.remove("hidden");
+        restartButton.classList.add("hidden");
+      };
+    </script>
+  </body>
+</html>

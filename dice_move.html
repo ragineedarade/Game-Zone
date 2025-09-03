@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mystic Dice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap");
+
+      body {
+        font-family: "Orbitron", sans-serif;
+        background: linear-gradient(135deg, #020617, #1e293b);
+        color: #f1f5f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .game-container {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(10px);
+        padding: 2.5rem;
+        border-radius: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        max-width: 95%;
+        width: 450px;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #818cf8;
+        text-shadow: 0 0 10px #818cf8, 0 0 20px #818cf8;
+        letter-spacing: 2px;
+        margin-bottom: 0.5rem;
+      }
+
+      .dice-display {
+        width: 150px;
+        height: 150px;
+        background-color: #3b82f6;
+        border-radius: 1.5rem;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 4rem;
+        font-weight: 900;
+        color: #f1f5f9;
+        transition: all 0.2s ease-in-out;
+        border: 2px solid #60a5fa;
+      }
+
+      .dice-display.rolling {
+        animation: pulse-border 0.5s infinite;
+      }
+
+      @keyframes pulse-border {
+        0% {
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.5),
+            0 0 0 0 rgba(59, 130, 246, 0.5);
+        }
+        100% {
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.5),
+            0 0 0 15px rgba(59, 130, 246, 0);
+        }
+      }
+
+      .game-button {
+        background-color: #4f46e5;
+        color: #e0e7ff;
+        padding: 0.75rem 2.5rem;
+        border-radius: 9999px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        letter-spacing: 1px;
+      }
+
+      .game-button:hover {
+        transform: translateY(-3px);
+        background-color: #6366f1;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .game-button:active {
+        transform: translateY(1px);
+      }
+
+      .message-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #1f2937;
+        padding: 2.5rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        z-index: 10;
+        text-align: center;
+        min-width: 280px;
+        display: none;
+        border: 2px solid #6366f1;
+      }
+
+      .message-box h2 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #a5b4fc;
+      }
+
+      .message-box p {
+        font-size: 1.25rem;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Mystic Dice</h1>
+      <div id="dice-display" class="dice-display">?</div>
+      <button id="roll-button" class="game-button">Roll the Dice</button>
+    </div>
+
+    <div id="messageBox" class="message-box">
+      <h2 id="message-heading"></h2>
+      <p id="message-body"></p>
+    </div>
+
+    <script>
+      const rollButton = document.getElementById("roll-button");
+      const diceDisplay = document.getElementById("dice-display");
+      const messageBox = document.getElementById("messageBox");
+      const messageHeading = document.getElementById("message-heading");
+      const messageBody = document.getElementById("message-body");
+
+      let isRolling = false;
+
+      function showMessage(heading, body, reset) {
+        messageHeading.textContent = heading;
+        messageBody.textContent = body;
+        messageBox.style.display = "block";
+        rollButton.disabled = true;
+        rollButton.style.opacity = 0.5;
+
+        if (reset) {
+          setTimeout(resetGame, 3000);
+        }
+      }
+
+      function resetGame() {
+        messageBox.style.display = "none";
+        rollButton.disabled = false;
+        rollButton.style.opacity = 1;
+        diceDisplay.textContent = "?";
+      }
+
+      function rollDice() {
+        if (isRolling) return;
+        isRolling = true;
+        rollButton.disabled = true;
+
+        diceDisplay.classList.add("rolling");
+
+        let roll = 0;
+        const rollInterval = setInterval(() => {
+          roll = Math.floor(Math.random() * 6) + 1;
+          diceDisplay.textContent = roll;
+        }, 100);
+
+        setTimeout(() => {
+          clearInterval(rollInterval);
+          diceDisplay.classList.remove("rolling");
+
+          if (roll === 6) {
+            showMessage(
+              "Mystery Unlocked!",
+              "You have rolled a 6. A hidden power has been revealed!",
+              true
+            );
+          } else {
+            isRolling = false;
+            rollButton.disabled = false;
+          }
+        }, 1000);
+      }
+
+      rollButton.addEventListener("click", rollDice);
+    </script>
+  </body>
+</html>

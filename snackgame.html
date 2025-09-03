@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snack Game</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #1a202c;
+        color: #e2e8f0;
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .game-container {
+        text-align: center;
+        padding: 2rem;
+        background-color: #2d3748;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      canvas {
+        background-color: #4a5568;
+        border-radius: 0.5rem;
+        border: 2px solid #a0aec0;
+      }
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #ffffff;
+      }
+      .score-heading {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        color: #e2e8f0;
+      }
+      .score-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 400px;
+        margin: 0.5rem auto 1rem;
+        padding: 0 1rem;
+      }
+      .score-item {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #cbd5e0;
+      }
+      .game-over-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+      }
+      .modal-content {
+        background-color: #1a202c;
+        padding: 2rem 3rem;
+        border-radius: 1rem;
+        text-align: center;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .modal-content h2 {
+        font-size: 2rem;
+        color: #fc8181;
+        margin-bottom: 1rem;
+      }
+      .modal-content p {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: #e2e8f0;
+      }
+      .modal-content button {
+        background-color: #63b3ed;
+        color: #1a202c;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        border: none;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .modal-content button:hover {
+        background-color: #90cdf4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Snack Game</h1>
+      <h2 class="score-heading">Scores</h2>
+      <div class="score-container">
+        <span class="score-item" id="scoreDisplay">Score: 0</span>
+        <span class="score-item" id="highScoreDisplay">High Score: 0</span>
+      </div>
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="game-over-modal" style="display: none">
+      <div class="modal-content">
+        <h2>Game Over!</h2>
+        <p id="finalScoreText"></p>
+        <button id="restartButton">Restart</button>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      const highScoreDisplay = document.getElementById("highScoreDisplay");
+      const gameOverModal = document.getElementById("gameOverModal");
+      const finalScoreText = document.getElementById("finalScoreText");
+      const restartButton = document.getElementById("restartButton");
+
+      const gridSize = 20;
+      let snake = [{ x: 10, y: 10 }];
+      let food = {};
+      let direction = "right";
+      let score = 0;
+      let highScore = localStorage.getItem("snakeHighScore") || 0;
+      let gameLoop;
+      let gameSpeed = 150; // Milliseconds per frame
+
+      function init() {
+        snake = [{ x: 10, y: 10 }];
+        direction = "right";
+        score = 0;
+        gameSpeed = 150;
+        scoreDisplay.textContent = `Score: ${score}`;
+        highScoreDisplay.textContent = `High Score: ${highScore}`;
+        gameOverModal.style.display = "none";
+        placeFood();
+        startGameLoop();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw food
+        ctx.fillStyle = "#fc8181";
+        ctx.beginPath();
+        ctx.arc(
+          food.x * gridSize + gridSize / 2,
+          food.y * gridSize + gridSize / 2,
+          gridSize / 2,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+
+        // Draw snake
+        snake.forEach((segment, index) => {
+          ctx.fillStyle = index === 0 ? "#63b3ed" : "#81e6d9"; // Head color vs body color
+          ctx.fillRect(
+            segment.x * gridSize,
+            segment.y * gridSize,
+            gridSize,
+            gridSize
+          );
+        });
+      }
+
+      function update() {
+        const head = { ...snake[0] };
+
+        // Update direction
+        switch (direction) {
+          case "right":
+            head.x += 1;
+            break;
+          case "left":
+            head.x -= 1;
+            break;
+          case "up":
+            head.y -= 1;
+            break;
+          case "down":
+            head.y += 1;
+            break;
+        }
+
+        // Check for collision with walls
+        if (
+          head.x < 0 ||
+          head.x >= canvas.width / gridSize ||
+          head.y < 0 ||
+          head.y >= canvas.height / gridSize
+        ) {
+          return gameOver();
+        }
+
+        // Check for collision with self
+        for (let i = 1; i < snake.length; i++) {
+          if (head.x === snake[i].x && head.y === snake[i].y) {
+            return gameOver();
+          }
+        }
+
+        // Move the snake
+        snake.unshift(head);
+
+        // Check for collision with food
+        if (head.x === food.x && head.y === food.y) {
+          score++;
+          scoreDisplay.textContent = `Score: ${score}`;
+          placeFood();
+          // Speed up the game
+          gameSpeed = Math.max(50, gameSpeed - 5);
+          clearInterval(gameLoop);
+          startGameLoop();
+        } else {
+          snake.pop();
+        }
+
+        draw();
+      }
+
+      function placeFood() {
+        food = {
+          x: Math.floor(Math.random() * (canvas.width / gridSize)),
+          y: Math.floor(Math.random() * (canvas.height / gridSize)),
+        };
+      }
+
+      function gameOver() {
+        clearInterval(gameLoop);
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem("snakeHighScore", highScore);
+          highScoreDisplay.textContent = `High Score: ${highScore}`;
+        }
+        finalScoreText.textContent = `Your final score is: ${score}`;
+        gameOverModal.style.display = "flex";
+      }
+
+      function startGameLoop() {
+        gameLoop = setInterval(update, gameSpeed);
+      }
+
+      // Keyboard controls
+      document.addEventListener("keydown", (e) => {
+        const newDirection = e.key.replace("Arrow", "").toLowerCase();
+        if (["up", "down", "left", "right"].includes(newDirection)) {
+          const opposite = {
+            up: "down",
+            down: "up",
+            left: "right",
+            right: "left",
+          };
+          if (opposite[newDirection] !== direction) {
+            direction = newDirection;
+          }
+        }
+      });
+
+      // Touch controls
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      });
+
+      canvas.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const dx = touchEndX - touchStartX;
+        const dy = touchEndY - touchStartY;
+        const minSwipeDistance = 20;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (Math.abs(dx) > minSwipeDistance) {
+            if (dx > 0 && direction !== "left") direction = "right";
+            else if (dx < 0 && direction !== "right") direction = "left";
+          }
+        } else {
+          if (Math.abs(dy) > minSwipeDistance) {
+            if (dy > 0 && direction !== "up") direction = "down";
+            else if (dy < 0 && direction !== "down") direction = "up";
+          }
+        }
+      });
+
+      restartButton.addEventListener("click", init);
+
+      window.onload = init;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookie Catcher</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* A fun, friendly font */
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap");
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
+        color: #1d3557;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .game-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        padding: 2rem;
+        max-width: 600px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        border: 2px solid #f1faee;
+      }
+
+      h1 {
+        font-family: "Poppins", sans-serif;
+        font-size: 3.5rem; /* Larger font size */
+        font-weight: 900; /* Bolder font weight */
+        color: #e63946;
+        text-shadow: 3px 3px 6px rgba(241, 250, 238, 0.7);
+        letter-spacing: 2px;
+        margin-bottom: 1rem;
+      }
+
+      .stats-bar {
+        background-color: #f1faee;
+        border-radius: 1rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between; /* Space out score and timer */
+        width: 100%;
+        color: #457b9d;
+      }
+
+      canvas {
+        border: 5px solid #a8dadc;
+        border-radius: 1rem;
+        background-color: #f1faee;
+        box-shadow: inset 0 0 15px rgba(230, 57, 70, 0.2);
+        cursor: pointer;
+      }
+
+      .start-button {
+        background: linear-gradient(45deg, #e63946, #e63946);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 5px 15px rgba(230, 57, 70, 0.4);
+      }
+
+      .start-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(230, 57, 70, 0.6);
+      }
+
+      .start-button:active {
+        transform: scale(0.95);
+      }
+
+      /* Message box styling for pop-up messages */
+      .message-box {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(69, 123, 157, 0.95);
+        padding: 2.5rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+        z-index: 10;
+        border: 2px solid #a8dadc;
+        text-align: center;
+        color: #f1faee;
+      }
+
+      .message-box h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #fff;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>COOKIE CATCHER</h1>
+      <div class="stats-bar">
+        <span>Score: <span id="score-display">0</span></span>
+        <span>Time: <span id="timer-display">120</span>s</span>
+      </div>
+      <canvas id="gameCanvas"></canvas>
+      <button id="startButton" class="start-button">Start Game</button>
+    </div>
+
+    <div id="messageBox" class="message-box hidden">
+      <h2 id="message-text"></h2>
+      <p>Your final score is: <span id="final-score">0</span></p>
+      <button id="restartButton" class="start-button mt-4">Play Again</button>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const startButton = document.getElementById("startButton");
+      const restartButton = document.getElementById("restartButton");
+      const messageBox = document.getElementById("messageBox");
+      const messageText = document.getElementById("message-text");
+      const finalScore = document.getElementById("final-score");
+      const scoreDisplay = document.getElementById("score-display");
+      const timerDisplay = document.getElementById("timer-display");
+
+      // Game state variables
+      let score = 0;
+      let isGameRunning = false;
+      let lastTime = 0;
+      let itemSpawnTimer = 0;
+      let itemSpawnInterval = 1000; // ms
+      const itemSpeed = 2;
+      let timeLeft = 120; // 2 minutes in seconds
+      let timerInterval;
+
+      // Player (basket) class
+      class Player {
+        constructor() {
+          this.width = 100;
+          this.height = 20;
+          this.x = (canvas.width - this.width) / 2;
+          this.y = canvas.height - this.height - 10;
+        }
+
+        draw() {
+          ctx.fillStyle = "#457b9d";
+          ctx.beginPath();
+          ctx.rect(this.x, this.y, this.width, this.height);
+          ctx.fill();
+        }
+      }
+
+      // Item (cookie or veggie) class
+      class Item {
+        constructor(type) {
+          this.type = type; // 'cookie' or 'veggie'
+          this.size = 30;
+          this.x = Math.random() * (canvas.width - this.size);
+          this.y = -this.size;
+          this.speed = itemSpeed;
+        }
+
+        update() {
+          this.y += this.speed;
+        }
+
+        draw() {
+          // Draw a circle for cookies
+          if (this.type === "cookie") {
+            ctx.fillStyle = "#a0522d"; /* Brown for cookies */
+            ctx.beginPath();
+            ctx.arc(
+              this.x + this.size / 2,
+              this.y + this.size / 2,
+              this.size / 2,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+          }
+          // Draw a square for veggies
+          else if (this.type === "veggie") {
+            ctx.fillStyle = "#6b8e23"; /* Green for veggies */
+            ctx.beginPath();
+            ctx.rect(this.x, this.y, this.size, this.size);
+            ctx.fill();
+          }
+        }
+      }
+
+      let player;
+      let items = [];
+
+      // Resize canvas on window resize
+      function resizeCanvas() {
+        canvas.width = Math.min(550, window.innerWidth - 40);
+        canvas.height = 350;
+        if (player) {
+          player.x = (canvas.width - player.width) / 2;
+          player.y = canvas.height - player.height - 10;
+        }
+      }
+
+      // Initialize game
+      function initializeGame() {
+        score = 0;
+        timeLeft = 120;
+        items = [];
+        player = new Player();
+        scoreDisplay.textContent = score;
+        timerDisplay.textContent = timeLeft;
+        messageBox.classList.add("hidden");
+        startButton.classList.add("hidden");
+      }
+
+      // Game loop
+      function gameLoop(currentTime) {
+        if (!isGameRunning) return;
+
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        // Update items
+        items.forEach((item) => item.update());
+
+        // Spawn new items
+        itemSpawnTimer += deltaTime;
+        if (itemSpawnTimer >= itemSpawnInterval) {
+          const itemType = Math.random() > 0.8 ? "veggie" : "cookie"; // 20% chance of a veggie
+          items.push(new Item(itemType));
+          itemSpawnTimer = 0;
+        }
+
+        // Collision detection
+        items.forEach((item) => {
+          // Check if item is caught by the basket
+          if (
+            item.y + item.size >= player.y &&
+            item.y + item.size <= player.y + player.height &&
+            item.x + item.size > player.x &&
+            item.x < player.x + player.width
+          ) {
+            if (item.type === "cookie") {
+              score += 10;
+            } else if (item.type === "veggie") {
+              score -= 5;
+            }
+            scoreDisplay.textContent = score;
+            items.splice(items.indexOf(item), 1);
+          }
+        });
+
+        // Remove off-screen items
+        items = items.filter((item) => item.y < canvas.height);
+
+        // Check for game over
+        if (score < 0) {
+          endGame("Oh no, too many veggies!");
+        }
+
+        // Draw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        player.draw();
+        items.forEach((item) => item.draw());
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start the game
+      function startGame() {
+        initializeGame();
+        isGameRunning = true;
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+
+        // Start the timer
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          timerDisplay.textContent = timeLeft;
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            endGame("Time's up!");
+          }
+        }, 1000);
+      }
+
+      // End the game
+      function endGame(message) {
+        isGameRunning = false;
+        clearInterval(timerInterval); // Stop the timer
+        messageText.textContent = message || "Game Over!";
+        finalScore.textContent = score;
+        messageBox.classList.remove("hidden");
+        restartButton.classList.remove("hidden");
+      }
+
+      // Event Listeners
+      window.addEventListener("resize", resizeCanvas);
+      canvas.addEventListener("mousemove", (e) => {
+        if (isGameRunning) {
+          const rect = canvas.getBoundingClientRect();
+          player.x = e.clientX - rect.left - player.width / 2;
+          // Keep the player within the canvas boundaries
+          if (player.x < 0) player.x = 0;
+          if (player.x + player.width > canvas.width)
+            player.x = canvas.width - player.width;
+        }
+      });
+      startButton.addEventListener("click", startGame);
+      restartButton.addEventListener("click", startGame);
+
+      window.onload = () => {
+        resizeCanvas();
+        messageText.textContent =
+          "Help the baker catch the cookies and avoid the veggies!";
+        messageBox.classList.remove("hidden");
+        restartButton.classList.add("hidden");
+      };
+    </script>
+  </body>
+</html>

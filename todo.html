@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative To-Do List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #111827;
+            color: #E5E7EB;
+        }
+        .container {
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="container bg-gray-900 rounded-3xl shadow-2xl p-6 sm:p-10 flex flex-col space-y-6">
+
+        <h1 class="text-3xl sm:text-4xl font-bold text-white text-center">Collaborative To-Do List</h1>
+        <p class="text-gray-400 text-center text-sm">Your tasks are saved in a shared database. Any user with the same app ID can see and edit them.</p>
+
+        <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+            <input id="taskInput" type="text" placeholder="Add a new task..." class="flex-grow bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all">
+            <button id="addTaskButton" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+                Add Task
+            </button>
+        </div>
+
+        <ul id="taskList" class="flex flex-col space-y-3"></ul>
+
+        <p id="userIdDisplay" class="text-xs text-gray-500 text-center mt-4 break-all"></p>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firestore logging for debugging
+        setLogLevel('debug');
+
+        // Global variables for Firebase configuration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const taskInput = document.getElementById('taskInput');
+        const addTaskButton = document.getElementById('addTaskButton');
+        const taskList = document.getElementById('taskList');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        let userId = null;
+
+        // Sign in anonymously to get a user ID
+        async function signIn() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                userId = auth.currentUser.uid;
+                userIdDisplay.textContent = `User ID: ${userId}`;
+                console.log("Signed in successfully with UID:", userId);
+            } catch (error) {
+                console.error("Error signing in:", error);
+                userId = crypto.randomUUID(); // Fallback to a random ID
+                userIdDisplay.textContent = `User ID (anonymous): ${userId}`;
+            }
+        }
+
+        // Firestore path for shared data
+        const tasksPath = `/artifacts/${appId}/public/data/tasks`;
+
+        // Add a new task to Firestore
+        async function addTask(text) {
+            try {
+                await addDoc(collection(db, tasksPath), {
+                    text: text,
+                    completed: false,
+                    createdAt: new Date(),
+                    ownerId: userId // Tracks who created the task
+                });
+                taskInput.value = '';
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+        }
+
+        // Update a task in Firestore
+        async function updateTask(docId, completed) {
+            try {
+                await updateDoc(doc(db, tasksPath, docId), {
+                    completed: completed
+                });
+            } catch (e) {
+                console.error("Error updating document: ", e);
+            }
+        }
+
+        // Delete a task from Firestore
+        async function deleteTask(docId) {
+            try {
+                await deleteDoc(doc(db, tasksPath, docId));
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+            }
+        }
+
+        // Render tasks from a Firestore snapshot
+        function renderTasks(docs) {
+            taskList.innerHTML = '';
+            docs.forEach(doc => {
+                const task = doc.data();
+                const li = document.createElement('li');
+                li.className = `flex items-center justify-between p-4 rounded-xl transition-all duration-300 ${task.completed ? 'bg-gray-700' : 'bg-gray-800'}`;
+                
+                const taskContent = document.createElement('span');
+                taskContent.className = `flex-grow text-lg truncate ${task.completed ? 'line-through text-gray-500' : 'text-white'}`;
+                taskContent.textContent = task.text;
+
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = "flex space-x-2";
+
+                const completeBtn = document.createElement('button');
+                completeBtn.className = "text-green-500 hover:text-green-400 p-2 rounded-full";
+                completeBtn.innerHTML = `
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                `;
+                completeBtn.onclick = () => updateTask(doc.id, !task.completed);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = "text-red-500 hover:text-red-400 p-2 rounded-full";
+                deleteBtn.innerHTML = `
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                    </svg>
+                `;
+                deleteBtn.onclick = () => deleteTask(doc.id);
+
+                buttonContainer.appendChild(completeBtn);
+                buttonContainer.appendChild(deleteBtn);
+                li.appendChild(taskContent);
+                li.appendChild(buttonContainer);
+                taskList.appendChild(li);
+            });
+        }
+
+        // Set up real-time listener
+        function setupRealtimeListener() {
+            // Create a query to get tasks ordered by creation time
+            const q = query(collection(db, tasksPath));
+            
+            // Listen to changes in the collection
+            onSnapshot(q, (querySnapshot) => {
+                const docs = [];
+                querySnapshot.forEach((doc) => {
+                    docs.push(doc);
+                });
+                renderTasks(docs);
+            }, (error) => {
+                console.error("Error getting real-time updates: ", error);
+            });
+        }
+
+        // Event listener for the Add Task button
+        addTaskButton.addEventListener('click', () => {
+            const text = taskInput.value.trim();
+            if (text) {
+                addTask(text);
+            }
+        });
+
+        // Event listener for the Enter key
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const text = taskInput.value.trim();
+                if (text) {
+                    addTask(text);
+                }
+            }
+        });
+
+        // Initialize the app
+        window.onload = async () => {
+            await signIn();
+            if (userId) {
+                setupRealtimeListener();
+            }
+        };
+
+    </script>
+</body>
+</html>

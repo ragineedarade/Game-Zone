@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Smash</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap");
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
+        color: #1d3557;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .game-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        padding: 2rem;
+        max-width: 650px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        border: 2px solid #f1faee;
+      }
+
+      h1 {
+        font-family: "Poppins", sans-serif;
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: #e63946;
+        text-shadow: 3px 3px 6px rgba(241, 250, 238, 0.7);
+        letter-spacing: 2px;
+        margin-bottom: 1rem;
+      }
+
+      .stats-bar {
+        background-color: #f1faee;
+        border-radius: 1rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        color: #457b9d;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .target-color-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      #target-color-display {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 3px solid #1d3557;
+      }
+
+      canvas {
+        border: 5px solid #a8dadc;
+        border-radius: 1rem;
+        background-color: #f1faee;
+        box-shadow: inset 0 0 15px rgba(230, 57, 70, 0.2);
+        cursor: pointer;
+      }
+
+      .action-button {
+        background: linear-gradient(45deg, #e63946, #e63946);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 5px 15px rgba(230, 57, 70, 0.4);
+      }
+
+      .action-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(230, 57, 70, 0.6);
+      }
+
+      .action-button:active {
+        transform: scale(0.95);
+      }
+
+      .message-box {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(69, 123, 157, 0.95);
+        padding: 2.5rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+        z-index: 10;
+        border: 2px solid #a8dadc;
+        text-align: center;
+        color: #f1faee;
+        max-width: 90%;
+      }
+
+      .message-box h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #fff;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>COLOR SMASH</h1>
+      <div class="stats-bar">
+        <span>Score: <span id="score-display">0</span></span>
+        <div class="target-color-box">
+          Target:
+          <div id="target-color-display"></div>
+        </div>
+        <span>Time: <span id="timer-display">60</span>s</span>
+      </div>
+      <canvas id="gameCanvas"></canvas>
+      <button id="startButton" class="action-button">Start Game</button>
+    </div>
+
+    <div id="messageBox" class="message-box hidden">
+      <h2 id="message-text"></h2>
+      <p>Your final score is: <span id="final-score">0</span></p>
+      <button id="restartButton" class="action-button mt-4">Play Again</button>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const startButton = document.getElementById("startButton");
+      const restartButton = document.getElementById("restartButton");
+      const messageBox = document.getElementById("messageBox");
+      const messageText = document.getElementById("message-text");
+      const finalScore = document.getElementById("final-score");
+      const scoreDisplay = document.getElementById("score-display");
+      const timerDisplay = document.getElementById("timer-display");
+      const targetColorDisplay = document.getElementById(
+        "target-color-display"
+      );
+
+      // Game state variables
+      let score = 0;
+      let isGameRunning = false;
+      let balls = [];
+      let timer = 60;
+      let timerInterval;
+      let targetColor;
+      const ballColors = [
+        "#e63946",
+        "#f4a261",
+        "#e76f51",
+        "#457b9d",
+        "#a8dadc",
+        "#1d3557",
+      ];
+
+      // Ball class to manage position, velocity, and drawing
+      class Ball {
+        constructor(color) {
+          this.radius = 20;
+          this.x =
+            Math.random() * (canvas.width - this.radius * 2) + this.radius;
+          this.y =
+            Math.random() * (canvas.height - this.radius * 2) + this.radius;
+          this.dx = (Math.random() - 0.5) * 4;
+          this.dy = (Math.random() - 0.5) * 4;
+          this.color = color;
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+          ctx.closePath();
+        }
+
+        update() {
+          // Bounce off the walls
+          if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+            this.dx = -this.dx;
+          }
+          if (
+            this.y + this.radius > canvas.height ||
+            this.y - this.radius < 0
+          ) {
+            this.dy = -this.dy;
+          }
+          this.x += this.dx;
+          this.y += this.dy;
+        }
+      }
+
+      // Initialize and resize the canvas
+      function initializeCanvas() {
+        canvas.width = Math.min(600, window.innerWidth - 40);
+        canvas.height = Math.min(400, window.innerHeight * 0.5);
+      }
+
+      // Main game animation loop
+      function gameLoop() {
+        if (!isGameRunning) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        balls.forEach((ball) => {
+          ball.update();
+          ball.draw();
+        });
+
+        // Spawn a new ball every 1-2 seconds
+        if (Math.random() < 0.02) {
+          const randomColor =
+            ballColors[Math.floor(Math.random() * ballColors.length)];
+          balls.push(new Ball(randomColor));
+        }
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start the game
+      function startGame() {
+        score = 0;
+        timer = 60;
+        balls = [];
+        isGameRunning = true;
+        scoreDisplay.textContent = score;
+        timerDisplay.textContent = timer;
+        messageBox.classList.add("hidden");
+        startButton.classList.add("hidden");
+
+        // Set the first target color
+        setNewTargetColor();
+
+        // Start the main game loop
+        gameLoop();
+
+        // Start the timer countdown
+        timerInterval = setInterval(() => {
+          timer--;
+          timerDisplay.textContent = timer;
+          if (timer <= 0) {
+            endGame("Time is up!");
+          }
+        }, 1000);
+      }
+
+      // End the game and display the score
+      function endGame(message) {
+        isGameRunning = false;
+        clearInterval(timerInterval);
+        messageText.textContent = message;
+        finalScore.textContent = score;
+        messageBox.classList.remove("hidden");
+        restartButton.classList.remove("hidden");
+      }
+
+      // Set a new random target color
+      function setNewTargetColor() {
+        targetColor = ballColors[Math.floor(Math.random() * ballColors.length)];
+        targetColorDisplay.style.backgroundColor = targetColor;
+      }
+
+      // Handle canvas clicks
+      canvas.addEventListener("click", (event) => {
+        if (!isGameRunning) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        let ballSmashed = false;
+        // Iterate through balls in reverse to avoid skipping elements when removing
+        for (let i = balls.length - 1; i >= 0; i--) {
+          const ball = balls[i];
+          const distance = Math.sqrt(
+            (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+          );
+
+          if (distance < ball.radius) {
+            ballSmashed = true;
+            if (ball.color === targetColor) {
+              score += 10;
+              balls.splice(i, 1);
+              // Every 5 successful smashes, change the target color
+              if (score % 50 === 0) {
+                setNewTargetColor();
+              }
+            } else {
+              score -= 5;
+            }
+            scoreDisplay.textContent = score;
+
+            // End the game if score drops too low
+            if (score < -50) {
+              endGame("Too many wrong colors!");
+            }
+            break; // Stop after hitting one ball
+          }
+        }
+      });
+
+      // Event Listeners
+      window.addEventListener("resize", initializeCanvas);
+      startButton.addEventListener("click", startGame);
+      restartButton.addEventListener("click", startGame);
+
+      window.onload = () => {
+        initializeCanvas();
+        messageText.textContent =
+          "Smash the balls that match the target color!";
+        messageBox.classList.remove("hidden");
+        restartButton.classList.add("hidden");
+      };
+    </script>
+  </body>
+</html>

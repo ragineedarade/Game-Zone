@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asteroid Dodger</title>
+    <style>
+      body {
+        background-color: #000000;
+        color: #ffffff;
+        font-family: "Inter", sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        user-select: none;
+        cursor: default;
+      }
+      canvas {
+        background-color: #0d111c;
+        border: 2px solid #5a5a5a;
+        box-shadow: 0 0 20px #2a2a2a;
+        border-radius: 12px;
+        touch-action: none; /* Prevents default touch behavior on mobile */
+      }
+      .ui-container {
+        display: flex;
+        justify-content: space-between;
+        width: 80%;
+        max-width: 600px;
+        margin: 1rem auto;
+        color: #cccccc;
+        font-weight: 600;
+      }
+      .game-over-modal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(13, 17, 28, 0.9);
+        border: 2px solid #5a5a5a;
+        border-radius: 12px;
+        padding: 2rem 3rem;
+        text-align: center;
+        display: none; /* Hidden by default */
+        z-index: 100;
+      }
+      .game-over-modal h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #ff6b6b;
+        margin-bottom: 1rem;
+      }
+      .game-over-modal p {
+        font-size: 1.25rem;
+        color: #cccccc;
+        margin-bottom: 2rem;
+      }
+      .game-over-modal button {
+        background-color: #6a0dad;
+        color: #ffffff;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        border: none;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .game-over-modal button:hover {
+        background-color: #8a2be2;
+      }
+    </style>
+  </head>
+  <body>
+    <h1
+      style="
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 1rem;
+      "
+    >
+      Asteroid Dodger
+    </h1>
+
+    <!-- Game UI -->
+    <div class="ui-container">
+      <div id="scoreDisplay">Score: 0</div>
+      <div id="highScoreDisplay">High Score: 0</div>
+    </div>
+
+    <!-- Canvas for the game -->
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="game-over-modal">
+      <h2>Game Over!</h2>
+      <p id="finalScoreText"></p>
+      <button id="restartButton">Restart</button>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      const highScoreDisplay = document.getElementById("highScoreDisplay");
+      const gameOverModal = document.getElementById("gameOverModal");
+      const finalScoreText = document.getElementById("finalScoreText");
+      const restartButton = document.getElementById("restartButton");
+
+      // Game state
+      let score = 0;
+      let highScore = localStorage.getItem("highScore") || 0;
+      let player;
+      let asteroids = [];
+      let gameLoopInterval;
+      let isGameOver = false;
+      let lastAsteroidSpawn = 0;
+
+      // Player object
+      const playerSize = 25;
+      const playerSpeed = 5;
+      let keys = {};
+
+      // Asteroid object
+      const asteroidMinSize = 15;
+      const asteroidMaxSize = 40;
+      const asteroidMinSpeed = 1;
+      const asteroidMaxSpeed = 3;
+
+      // Colors
+      const playerColor = "#A855F7";
+      const asteroidColor = "#fcd34d";
+
+      function init() {
+        score = 0;
+        isGameOver = false;
+        asteroids = [];
+        player = {
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          dx: 0,
+          dy: 0,
+        };
+        scoreDisplay.textContent = `Score: 0`;
+        highScoreDisplay.textContent = `High Score: ${highScore}`;
+        gameOverModal.style.display = "none";
+      }
+
+      function drawPlayer() {
+        ctx.fillStyle = playerColor;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, playerSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function spawnAsteroid() {
+        const size =
+          Math.random() * (asteroidMaxSize - asteroidMinSize) + asteroidMinSize;
+        const speed =
+          Math.random() * (asteroidMaxSpeed - asteroidMinSpeed) +
+          asteroidMinSpeed;
+
+        // Spawn from a random edge
+        let x, y, dx, dy;
+        const side = Math.floor(Math.random() * 4); // 0:top, 1:right, 2:bottom, 3:left
+        switch (side) {
+          case 0: // Top
+            x = Math.random() * canvas.width;
+            y = -size;
+            dx = (canvas.width / 2 - x) / 100;
+            dy = speed;
+            break;
+          case 1: // Right
+            x = canvas.width + size;
+            y = Math.random() * canvas.height;
+            dx = -speed;
+            dy = (canvas.height / 2 - y) / 100;
+            break;
+          case 2: // Bottom
+            x = Math.random() * canvas.width;
+            y = canvas.height + size;
+            dx = (canvas.width / 2 - x) / 100;
+            dy = -speed;
+            break;
+          case 3: // Left
+            x = -size;
+            y = Math.random() * canvas.height;
+            dx = speed;
+            dy = (canvas.height / 2 - y) / 100;
+            break;
+        }
+
+        asteroids.push({
+          x: x,
+          y: y,
+          dx: dx,
+          dy: dy,
+          size: size,
+        });
+      }
+
+      function drawAsteroids() {
+        ctx.fillStyle = asteroidColor;
+        asteroids.forEach((asteroid) => {
+          ctx.beginPath();
+          ctx.arc(asteroid.x, asteroid.y, asteroid.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      function update() {
+        if (isGameOver) return;
+
+        // Update player position
+        if (keys["ArrowUp"] || keys["KeyW"]) player.y -= playerSpeed;
+        if (keys["ArrowDown"] || keys["KeyS"]) player.y += playerSpeed;
+        if (keys["ArrowLeft"] || keys["KeyA"]) player.x -= playerSpeed;
+        if (keys["ArrowRight"] || keys["KeyD"]) player.x += playerSpeed;
+
+        // Keep player within canvas boundaries
+        player.x = Math.max(
+          playerSize,
+          Math.min(canvas.width - playerSize, player.x)
+        );
+        player.y = Math.max(
+          playerSize,
+          Math.min(canvas.height - playerSize, player.y)
+        );
+
+        // Update asteroid positions
+        asteroids.forEach((asteroid) => {
+          asteroid.x += asteroid.dx;
+          asteroid.y += asteroid.dy;
+        });
+
+        // Filter out asteroids that are off-screen and check for collisions
+        asteroids = asteroids.filter((asteroid) => {
+          const distance = Math.sqrt(
+            (player.x - asteroid.x) ** 2 + (player.y - asteroid.y) ** 2
+          );
+
+          // Collision detection
+          if (distance < playerSize + asteroid.size) {
+            gameOver();
+          }
+
+          return (
+            asteroid.x > -asteroid.size &&
+            asteroid.x < canvas.width + asteroid.size &&
+            asteroid.y > -asteroid.size &&
+            asteroid.y < canvas.height + asteroid.size
+          );
+        });
+
+        // Spawn new asteroids periodically
+        const currentTime = Date.now();
+        // The spawn rate is now based on score but starts much slower
+        const spawnRate = Math.max(500, 1000 - Math.floor(score / 5));
+        if (currentTime - lastAsteroidSpawn > spawnRate) {
+          spawnAsteroid();
+          lastAsteroidSpawn = currentTime;
+        }
+
+        // Update score
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPlayer();
+        drawAsteroids();
+      }
+
+      function gameLoop() {
+        update();
+        draw();
+        if (!isGameOver) {
+          gameLoopInterval = requestAnimationFrame(gameLoop);
+        }
+      }
+
+      function gameOver() {
+        isGameOver = true;
+        cancelAnimationFrame(gameLoopInterval);
+
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem("highScore", highScore);
+          highScoreDisplay.textContent = `High Score: ${highScore}`;
+        }
+
+        finalScoreText.textContent = `Your final score is: ${score}`;
+        gameOverModal.style.display = "block";
+      }
+
+      // Event listeners
+      document.addEventListener("keydown", (e) => {
+        keys[e.code] = true;
+      });
+
+      document.addEventListener("keyup", (e) => {
+        keys[e.code] = false;
+      });
+
+      restartButton.addEventListener("click", () => {
+        init();
+        gameLoop();
+      });
+
+      window.onload = function () {
+        init();
+        gameLoop();
+      };
+    </script>
+  </body>
+</html>

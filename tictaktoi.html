@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tic-Tac-Toe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #1a202c;
+        color: #e2e8f0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #2d3748;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      h1 {
+        font-size: 4rem;
+        font-weight: 700;
+        margin-bottom: 2.5rem;
+        color: #ffffff;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 80px);
+        grid-gap: 8px;
+        background-color: #4a5568;
+        padding: 8px;
+        border-radius: 0.5rem;
+      }
+      .cell {
+        width: 80px;
+        height: 80px;
+        background-color: #a0aec0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 3rem;
+        font-weight: 700;
+        color: #1a202c;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.2s;
+      }
+      .cell:hover {
+        background-color: #cbd5e0;
+        transform: scale(1.05);
+      }
+      .cell.x {
+        background-color: #63b3ed;
+        color: #1a202c;
+      }
+      .cell.o {
+        background-color: #fc8181;
+        color: #1a202c;
+      }
+      .status {
+        margin-top: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e2e8f0;
+      }
+      .message-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #2d3748;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        z-index: 100;
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .message-box h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #ffffff;
+      }
+      .message-box button {
+        background-color: #63b3ed;
+        color: #1a202c;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        border: none;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .message-box button:hover {
+        background-color: #90cdf4;
+      }
+      .player-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        width: 100%;
+      }
+      .player-inputs input {
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid #a0aec0;
+        background-color: #4a5568;
+        color: #e2e8f0;
+        text-align: center;
+        width: 100%;
+      }
+      .button {
+        background-color: #4a90e2;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .button:hover {
+        background-color: #5d9cec;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-gray-100">
+    <div class="game-container">
+      <h1 id="gameTitle">Tic-Tac-Toe</h1>
+
+      <div id="startScreen" class="flex flex-col items-center">
+        <button id="startGameBtn" class="button mt-4">Start Game</button>
+      </div>
+
+      <div id="nameEntryScreen" class="hidden flex-col items-center">
+        <div class="player-inputs mb-4">
+          <input
+            type="text"
+            id="playerXName"
+            placeholder="Player X's Name"
+            value="Player X"
+          />
+          <input
+            type="text"
+            id="playerOName"
+            placeholder="Player O's Name"
+            value="Player O"
+          />
+        </div>
+        <button id="playGameBtn" class="button">Play</button>
+      </div>
+
+      <div id="gamePlayArea" class="hidden flex-col items-center">
+        <div class="board" id="gameBoard">
+          <div class="cell" data-index="0"></div>
+          <div class="cell" data-index="1"></div>
+          <div class="cell" data-index="2"></div>
+          <div class="cell" data-index="3"></div>
+          <div class="cell" data-index="4"></div>
+          <div class="cell" data-index="5"></div>
+          <div class="cell" data-index="6"></div>
+          <div class="cell" data-index="7"></div>
+          <div class="cell" data-index="8"></div>
+        </div>
+        <div class="status" id="statusMessage"></div>
+      </div>
+    </div>
+
+    <!-- Message Box -->
+    <div id="messageBox" class="message-box">
+      <h2 id="messageTitle"></h2>
+      <button id="restartBtn" class="button">Restart Game</button>
+    </div>
+
+    <script>
+      const startGameBtn = document.getElementById("startGameBtn");
+      const startScreen = document.getElementById("startScreen");
+      const nameEntryScreen = document.getElementById("nameEntryScreen");
+      const playGameBtn = document.getElementById("playGameBtn");
+      const gamePlayArea = document.getElementById("gamePlayArea");
+
+      const cells = document.querySelectorAll(".cell");
+      const statusMessage = document.getElementById("statusMessage");
+      const messageBox = document.getElementById("messageBox");
+      const messageTitle = document.getElementById("messageTitle");
+      const restartBtn = document.getElementById("restartBtn");
+      const playerXNameInput = document.getElementById("playerXName");
+      const playerONameInput = document.getElementById("playerOName");
+
+      let boardState = ["", "", "", "", "", "", "", "", ""];
+      let currentPlayer = "X";
+      let isGameActive = true;
+
+      const winningConditions = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
+
+      const startGame = () => {
+        startScreen.classList.add("hidden");
+        nameEntryScreen.classList.remove("hidden");
+      };
+
+      const playGame = () => {
+        nameEntryScreen.classList.add("hidden");
+        gamePlayArea.classList.remove("hidden");
+        const initialPlayerName =
+          currentPlayer === "X"
+            ? playerXNameInput.value
+            : playerONameInput.value;
+        statusMessage.textContent = `${initialPlayerName}'s turn`;
+      };
+
+      const handleCellClick = (e) => {
+        const clickedCell = e.target;
+        const clickedCellIndex = parseInt(
+          clickedCell.getAttribute("data-index")
+        );
+
+        if (boardState[clickedCellIndex] !== "" || !isGameActive) {
+          return;
+        }
+
+        boardState[clickedCellIndex] = currentPlayer;
+        clickedCell.textContent = currentPlayer;
+        clickedCell.classList.add(currentPlayer.toLowerCase());
+
+        checkResult();
+      };
+
+      const checkResult = () => {
+        let roundWon = false;
+        for (let i = 0; i < winningConditions.length; i++) {
+          const winCondition = winningConditions[i];
+          let a = boardState[winCondition[0]];
+          let b = boardState[winCondition[1]];
+          let c = boardState[winCondition[2]];
+
+          if (a === "" || b === "" || c === "") {
+            continue;
+          }
+          if (a === b && b === c) {
+            roundWon = true;
+            break;
+          }
+        }
+
+        if (roundWon) {
+          const winnerName =
+            currentPlayer === "X"
+              ? playerXNameInput.value
+              : playerONameInput.value;
+          messageTitle.textContent = `${winnerName} has won!`;
+          messageBox.style.display = "flex";
+          isGameActive = false;
+          return;
+        }
+
+        const roundDraw = !boardState.includes("");
+        if (roundDraw) {
+          messageTitle.textContent = "It's a draw!";
+          messageBox.style.display = "flex";
+          isGameActive = false;
+          return;
+        }
+
+        changePlayer();
+      };
+
+      const changePlayer = () => {
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        const currentPlayerName =
+          currentPlayer === "X"
+            ? playerXNameInput.value
+            : playerONameInput.value;
+        statusMessage.textContent = `${currentPlayerName}'s turn`;
+      };
+
+      const restartGame = () => {
+        isGameActive = true;
+        currentPlayer = "X";
+        boardState = ["", "", "", "", "", "", "", "", ""];
+        const currentPlayerName =
+          currentPlayer === "X"
+            ? playerXNameInput.value
+            : playerONameInput.value;
+        statusMessage.textContent = `${currentPlayerName}'s turn`;
+        cells.forEach((cell) => {
+          cell.textContent = "";
+          cell.classList.remove("x", "o");
+        });
+        messageBox.style.display = "none";
+      };
+
+      startGameBtn.addEventListener("click", startGame);
+      playGameBtn.addEventListener("click", playGame);
+      cells.forEach((cell) => cell.addEventListener("click", handleCellClick));
+      restartBtn.addEventListener("click", restartGame);
+
+      playerXNameInput.addEventListener("input", () => {
+        const currentPlayerName =
+          currentPlayer === "X"
+            ? playerXNameInput.value
+            : playerONameInput.value;
+        statusMessage.textContent = `${currentPlayerName}'s turn`;
+      });
+      playerONameInput.addEventListener("input", () => {
+        const currentPlayerName =
+          currentPlayer === "X"
+            ? playerXNameInput.value
+            : playerONameInput.value;
+        statusMessage.textContent = `${currentPlayerName}'s turn`;
+      });
+    </script>
+  </body>
+</html>

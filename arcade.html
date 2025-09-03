@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aether Catch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(13, 17, 23, 1) 0%,
+          rgba(2, 6, 12, 1) 100%
+        );
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+      /* Header bar with title and stats */
+      .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 95vw;
+        max-width: 800px;
+        margin-bottom: 10px;
+        padding: 10px 20px;
+        background: rgba(31, 41, 55, 0.9);
+        border-radius: 12px;
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+      }
+      .game-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 24px;
+        color: cyan;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+      }
+      .ui-panel {
+        text-align: center;
+        margin: 0 10px;
+      }
+      .ui-label {
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+      }
+      .ui-value {
+        font-family: "Orbitron", sans-serif;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+      }
+
+      /* Game board */
+      #game-container {
+        background: #111827;
+        border: 2px solid rgba(168, 85, 247, 0.5);
+        border-radius: 20px;
+        box-shadow: 0 0 40px rgba(168, 85, 247, 0.4),
+          inset 0 0 20px rgba(168, 85, 247, 0.2);
+        width: 95vw;
+        height: 85vh;
+        max-width: 800px;
+        max-height: 800px;
+        position: relative;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(0, 0, 0, 0.1) 0%,
+          rgba(0, 0, 0, 0.5) 100%
+        );
+      }
+
+      /* Overlay for start and game over messages */
+      #message-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(17, 24, 39, 0.8);
+        backdrop-filter: blur(5px);
+        z-index: 20;
+      }
+      .message-content {
+        background: rgba(30, 41, 59, 0.7);
+        border: 2px solid #a855f7;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+      }
+      #game-over-text {
+        font-family: "Orbitron", sans-serif;
+        font-size: 28px;
+        font-weight: bold;
+        color: red;
+        text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+      }
+      #final-score-text {
+        font-family: "Orbitron", sans-serif;
+        font-size: 20px;
+        color: white;
+        margin-top: 10px;
+      }
+      .action-button {
+        margin-top: 10px;
+        font-family: "Orbitron", sans-serif;
+        background: linear-gradient(45deg, #a855f7, #6366f1);
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+      }
+      .action-button:hover {
+        transform: scale(1.05);
+        background: linear-gradient(45deg, #9333ea, #4f46e5);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header with title and stats -->
+    <div class="game-header">
+      <div class="game-title">Aether Catch</div>
+      <div class="ui-panel">
+        <div class="ui-label">Score</div>
+        <div id="score-value" class="ui-value">0</div>
+      </div>
+      <div class="ui-panel">
+        <div class="ui-label">Lives</div>
+        <div id="lives-value" class="ui-value">3</div>
+      </div>
+    </div>
+
+    <!-- Game board -->
+    <div id="game-container">
+      <canvas id="game-canvas"></canvas>
+      <div id="message-overlay">
+        <div class="message-content">
+          <h2 id="message-title" class="text-cyan-400 text-xl font-bold">
+            Welcome to Aether Catch!
+          </h2>
+          <p id="message-text" class="text-gray-200 mt-2">
+            Catch the purple stars, avoid the red triangles. Move your mouse or
+            finger to control the catcher.
+          </p>
+          <button id="start-button" class="action-button mt-4">
+            Start Game
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.onload = function () {
+        const canvas = document.getElementById("game-canvas");
+        const ctx = canvas.getContext("2d");
+        const scoreValue = document.getElementById("score-value");
+        const livesValue = document.getElementById("lives-value");
+        const messageOverlay = document.getElementById("message-overlay");
+        const messageTitle = document.getElementById("message-title");
+        const messageText = document.getElementById("message-text");
+        const startButton = document.getElementById("start-button");
+
+        const catchSynth = new Tone.Synth().toDestination();
+        const missSynth = new Tone.MembraneSynth().toDestination();
+
+        let score = 0;
+        let lives = 3;
+        let isGameOver = true;
+        let stars = [],
+          meteors = [],
+          particles = [];
+        let lastSpawn = 0;
+        let player = {
+          x: 0,
+          y: 0,
+          width: 80,
+          height: 20,
+          color: "rgba(168, 85, 247, 0.7)",
+          trail: [],
+          trailLength: 20,
+        };
+        let gameSpeedMultiplier = 1;
+        const spawnRate = 500;
+
+        function resizeCanvas() {
+          canvas.width = canvas.parentElement.clientWidth;
+          canvas.height = canvas.parentElement.clientHeight;
+          player.x = canvas.width / 2;
+          player.y = canvas.height - 50;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        canvas.addEventListener("mousemove", (e) => {
+          if (!isGameOver) {
+            const rect = canvas.getBoundingClientRect();
+            player.x = e.clientX - rect.left;
+          }
+        });
+
+        canvas.addEventListener("touchmove", (e) => {
+          e.preventDefault();
+          if (!isGameOver) {
+            const rect = canvas.getBoundingClientRect();
+            player.x = e.touches[0].clientX - rect.left;
+          }
+        });
+
+        function createStar() {
+          return {
+            x: Math.random() * canvas.width,
+            y: -20,
+            size: 8,
+            velocity: 2 + Math.random() * 2,
+            color: "#a855f7",
+          };
+        }
+
+        function createMeteor() {
+          return {
+            x: Math.random() * canvas.width,
+            y: -20,
+            size: 10,
+            velocity: 3 + Math.random() * 2,
+            color: "#ef4444",
+          };
+        }
+
+        function checkCollision(obj1, obj2) {
+          const dx = obj1.x - obj2.x;
+          const dy = obj1.y - obj2.y;
+          return Math.sqrt(dx * dx + dy * dy) < obj1.width / 2 + obj2.size;
+        }
+
+        function update() {
+          if (isGameOver) return;
+          if (Date.now() - lastSpawn > spawnRate) {
+            (Math.random() < 0.7 ? stars : meteors).push(
+              Math.random() < 0.7 ? createStar() : createMeteor()
+            );
+            lastSpawn = Date.now();
+          }
+
+          stars.forEach((star, i) => {
+            star.y += star.velocity * gameSpeedMultiplier;
+            if (checkCollision(player, star)) {
+              stars.splice(i, 1);
+              score += 10;
+              scoreValue.textContent = score;
+              catchSynth.triggerAttackRelease("C5", "8n");
+            } else if (star.y > canvas.height) stars.splice(i, 1);
+          });
+
+          meteors.forEach((meteor, i) => {
+            meteor.y += meteor.velocity * gameSpeedMultiplier;
+            if (checkCollision(player, meteor)) {
+              meteors.splice(i, 1);
+              lives--;
+              livesValue.textContent = lives;
+              missSynth.triggerAttackRelease("C3", "8n");
+              if (lives <= 0) endGame();
+            } else if (meteor.y > canvas.height) meteors.splice(i, 1);
+          });
+
+          player.trail.push({ x: player.x, y: player.y });
+          if (player.trail.length > player.trailLength) player.trail.shift();
+        }
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          player.trail.forEach((t, i) => {
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(168,85,247,${i / player.trail.length})`;
+            ctx.fill();
+          });
+
+          ctx.fillStyle = player.color;
+          ctx.fillRect(
+            player.x - player.width / 2,
+            player.y,
+            player.width,
+            player.height
+          );
+
+          stars.forEach((s) => {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.fill();
+          });
+
+          meteors.forEach((m) => {
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y - m.size);
+            ctx.lineTo(m.x + m.size, m.y + m.size);
+            ctx.lineTo(m.x - m.size, m.y + m.size);
+            ctx.closePath();
+            ctx.fillStyle = m.color;
+            ctx.fill();
+          });
+        }
+
+        function gameLoop() {
+          update();
+          draw();
+          requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+          score = 0;
+          lives = 3;
+          stars = [];
+          meteors = [];
+          scoreValue.textContent = score;
+          livesValue.textContent = lives;
+          isGameOver = false;
+          messageOverlay.style.display = "none";
+        }
+
+        function endGame() {
+          isGameOver = true;
+          messageTitle.textContent = "Game Over!";
+          messageTitle.id = "game-over-text";
+          messageText.textContent = `Final Score: ${score}`;
+          messageText.id = "final-score-text";
+          messageOverlay.style.display = "flex";
+        }
+
+        startButton.addEventListener("click", startGame);
+        gameLoop();
+      };
+    </script>
+  </body>
+</html>

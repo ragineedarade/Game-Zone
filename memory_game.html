@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #1a202c;
+        color: #e2e8f0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #2d3748;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      h1 {
+        font-size: 5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #ffffff;
+      }
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      .color-button {
+        width: 150px;
+        height: 150px;
+        border-radius: 1rem;
+        cursor: pointer;
+        transition: transform 0.1s ease-in-out;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        border: 4px solid #4a5568;
+      }
+      .color-button:hover {
+        transform: scale(1.05);
+      }
+      .color-button.flash {
+        border-color: #e2e8f0;
+        transform: scale(1.05);
+      }
+      #green {
+        background-color: #38a169;
+      }
+      #red {
+        background-color: #e53e3e;
+      }
+      #yellow {
+        background-color: #ecc94b;
+      }
+      #blue {
+        background-color: #3182ce;
+      }
+
+      .status {
+        margin-top: 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      .button {
+        background-color: #4a90e2;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .button:hover {
+        background-color: #5d9cec;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-gray-100">
+    <div class="game-container">
+      <h1>Memory Game</h1>
+      <div class="grid-container" id="gameGrid">
+        <button id="green" class="color-button"></button>
+        <button id="red" class="color-button"></button>
+        <button id="yellow" class="color-button"></button>
+        <button id="blue" class="color-button"></button>
+      </div>
+      <div class="status mt-6">Level: <span id="levelDisplay">0</span></div>
+      <button id="startGameBtn" class="button mt-4">Start Game</button>
+    </div>
+
+    <script>
+      const greenBtn = document.getElementById("green");
+      const redBtn = document.getElementById("red");
+      const yellowBtn = document.getElementById("yellow");
+      const blueBtn = document.getElementById("blue");
+      const startGameBtn = document.getElementById("startGameBtn");
+      const levelDisplay = document.getElementById("levelDisplay");
+
+      const buttons = [greenBtn, redBtn, yellowBtn, blueBtn];
+      let gameSequence = [];
+      let playerSequence = [];
+      let level = 0;
+      let isPlayerTurn = false;
+
+      // Flash and sound functions
+      const flash = (button) => {
+        return new Promise((resolve) => {
+          button.classList.add("flash");
+          setTimeout(() => {
+            button.classList.remove("flash");
+            setTimeout(() => resolve(), 250);
+          }, 250);
+        });
+      };
+
+      const playSequence = async () => {
+        isPlayerTurn = false;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        for (let i = 0; i < gameSequence.length; i++) {
+          await flash(gameSequence[i]);
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+        isPlayerTurn = true;
+      };
+
+      const nextLevel = () => {
+        level++;
+        levelDisplay.textContent = level;
+        playerSequence = [];
+        const randomButton =
+          buttons[Math.floor(Math.random() * buttons.length)];
+        gameSequence.push(randomButton);
+        playSequence();
+      };
+
+      const handleButtonClick = (e) => {
+        if (!isPlayerTurn) return;
+
+        const clickedButton = e.target;
+        playerSequence.push(clickedButton);
+        flash(clickedButton);
+
+        checkPlayerSequence();
+      };
+
+      const checkPlayerSequence = () => {
+        const lastIndex = playerSequence.length - 1;
+        if (playerSequence[lastIndex] !== gameSequence[lastIndex]) {
+          gameOver();
+          return;
+        }
+        if (playerSequence.length === gameSequence.length) {
+          setTimeout(nextLevel, 1000);
+        }
+      };
+
+      const gameOver = () => {
+        isGameActive = false;
+        levelDisplay.textContent = "Game Over! Level " + level;
+        startGameBtn.textContent = "Play Again";
+        startGameBtn.style.display = "block";
+      };
+
+      const startGame = () => {
+        startGameBtn.style.display = "none";
+        level = 0;
+        gameSequence = [];
+        playerSequence = [];
+        nextLevel();
+      };
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", handleButtonClick);
+      });
+
+      startGameBtn.addEventListener("click", startGame);
+    </script>
+  </body>
+</html>

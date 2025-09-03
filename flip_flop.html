@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Matching Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #1a202c;
+        color: #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 1rem;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-align: center;
+      }
+
+      #game-board {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 1rem;
+        padding: 1rem;
+        background-color: #2d3748;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      .card {
+        width: 100px;
+        height: 100px;
+        perspective: 1000px;
+        cursor: pointer;
+      }
+
+      @media (max-width: 640px) {
+        .card {
+          width: 70px;
+          height: 70px;
+        }
+      }
+
+      .card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        transition: transform 0.6s;
+        transform-style: preserve-3d;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .card.flipped .card-inner {
+        transform: rotateY(180deg);
+      }
+
+      .card-front,
+      .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        border-radius: 0.75rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      .card-front {
+        background-color: #4a5568;
+        color: #cbd5e0;
+      }
+
+      .card-back {
+        background-color: #e2e8f0;
+        color: #1a202c;
+        transform: rotateY(180deg);
+      }
+
+      .card.matched .card-inner {
+        animation: pulse 1s ease-in-out;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1) rotateY(180deg);
+        }
+        50% {
+          transform: scale(1.1) rotateY(180deg);
+        }
+        100% {
+          transform: scale(1) rotateY(180deg);
+        }
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        background-color: #2d3748;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        width: 100%;
+      }
+
+      .button {
+        background-color: #4a90e2;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .button:hover {
+        background-color: #5d9cec;
+      }
+
+      #message-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #2d3748;
+        color: #e2e8f0;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        z-index: 1000;
+        display: none;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -60%);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, -50%);
+        }
+      }
+
+      #message-box h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+
+      #message-box p {
+        font-size: 1.25rem;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-gray-100">
+    <div class="container">
+      <h1>Memory Matching Game</h1>
+      <div class="controls">
+        <span id="score" class="text-xl font-bold">Score: 0</span>
+        <button id="reset-button" class="button">Reset Game</button>
+      </div>
+      <div id="game-board" class="grid-cols-4"></div>
+    </div>
+    <div id="message-box">
+      <h2 id="message-title"></h2>
+      <p id="message-text"></p>
+      <button id="message-button" class="button mt-4">OK</button>
+    </div>
+
+    <script>
+      const gameBoard = document.getElementById("game-board");
+      const scoreDisplay = document.getElementById("score");
+      const resetButton = document.getElementById("reset-button");
+      const messageBox = document.getElementById("message-box");
+      const messageTitle = document.getElementById("message-title");
+      const messageText = document.getElementById("message-text");
+      const messageButton = document.getElementById("message-button");
+
+      const cardIcons = [
+        "🎉",
+        "💡",
+        "🚀",
+        "🔥",
+        "🌈",
+        "🧩",
+        "🎈",
+        "❤️",
+        "🎉",
+        "💡",
+        "🚀",
+        "🔥",
+        "🌈",
+        "🧩",
+        "🎈",
+        "❤️",
+      ];
+
+      let flippedCards = [];
+      let matchedCards = [];
+      let score = 0;
+      let isChecking = false;
+
+      // Function to shuffle the cards randomly
+      const shuffleCards = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      };
+
+      // Function to create a card element
+      const createCard = (icon) => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">?</div>
+                    <div class="card-back">${icon}</div>
+                </div>
+            `;
+        card.addEventListener("click", () => flipCard(card));
+        return card;
+      };
+
+      // Function to handle card flipping logic
+      const flipCard = (card) => {
+        if (
+          isChecking ||
+          flippedCards.length === 2 ||
+          matchedCards.includes(card)
+        ) {
+          return;
+        }
+
+        card.classList.add("flipped");
+        flippedCards.push(card);
+
+        if (flippedCards.length === 2) {
+          isChecking = true;
+          setTimeout(checkForMatch, 1000);
+        }
+      };
+
+      // Function to check if two flipped cards match
+      const checkForMatch = () => {
+        const [card1, card2] = flippedCards;
+        const icon1 = card1.querySelector(".card-back").textContent;
+        const icon2 = card2.querySelector(".card-back").textContent;
+
+        if (icon1 === icon2) {
+          // Cards match
+          card1.classList.add("matched");
+          card2.classList.add("matched");
+          matchedCards.push(card1, card2);
+          score += 1;
+          updateScore();
+          checkWin();
+        } else {
+          // Cards do not match, flip them back
+          card1.classList.remove("flipped");
+          card2.classList.remove("flipped");
+        }
+
+        flippedCards = [];
+        isChecking = false;
+      };
+
+      // Function to update the score display
+      const updateScore = () => {
+        scoreDisplay.textContent = `Score: ${score}`;
+      };
+
+      // Function to check for a win condition
+      const checkWin = () => {
+        if (matchedCards.length === cardIcons.length) {
+          showMessage(
+            "Congratulations!",
+            `You won the game with a score of ${score}!`
+          );
+        }
+      };
+
+      // Function to show a message box
+      const showMessage = (title, text) => {
+        messageTitle.textContent = title;
+        messageText.textContent = text;
+        messageBox.style.display = "block";
+      };
+
+      // Function to hide the message box
+      const hideMessage = () => {
+        messageBox.style.display = "none";
+      };
+
+      // Function to reset the game
+      const resetGame = () => {
+        gameBoard.innerHTML = "";
+        flippedCards = [];
+        matchedCards = [];
+        score = 0;
+        isChecking = false;
+        updateScore();
+        initGame();
+      };
+
+      // Event listener for the message box button
+      messageButton.addEventListener("click", hideMessage);
+
+      // Event listener for the reset button
+      resetButton.addEventListener("click", resetGame);
+
+      // Function to initialize the game
+      const initGame = () => {
+        const shuffledIcons = shuffleCards([...cardIcons]);
+        shuffledIcons.forEach((icon) => {
+          const card = createCard(icon);
+          gameBoard.appendChild(card);
+        });
+      };
+
+      // Initialize the game when the page loads
+      window.onload = initGame;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble Pop Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #1a202c;
+        color: #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 1rem;
+        overflow: hidden;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-align: center;
+      }
+
+      #game-area {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        background: linear-gradient(to top, #4a90e2, #2d3748);
+        border-radius: 1rem;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+
+      .bubble {
+        position: absolute;
+        bottom: -50px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.2s ease-out;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+
+      .bubble-1 {
+        width: 50px;
+        height: 50px;
+      }
+      .bubble-2 {
+        width: 40px;
+        height: 40px;
+      }
+      .bubble-3 {
+        width: 30px;
+        height: 30px;
+      }
+
+      .bubble:hover {
+        transform: scale(1.1);
+      }
+
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        max-width: 600px;
+        background-color: #2d3748;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .info {
+        font-size: 1.25rem;
+        font-weight: bold;
+      }
+
+      .button {
+        background-color: #4a90e2;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out,
+          transform 0.1s ease-in-out;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .button:hover {
+        background-color: #5d9cec;
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-gray-100">
+    <div class="container">
+      <h1>Bubble Pop Game</h1>
+      <div class="controls">
+        <span id="score" class="info">Score: 0</span>
+        <span id="time-display" class="info">Time: 120s</span>
+        <button id="start-button" class="button">Start Game</button>
+      </div>
+      <div id="game-area"></div>
+    </div>
+
+    <script>
+      const gameArea = document.getElementById("game-area");
+      const scoreDisplay = document.getElementById("score");
+      const timeDisplay = document.getElementById("time-display");
+      const startButton = document.getElementById("start-button");
+
+      let score = 0;
+      let timeLeft = 120;
+      let gameTimer;
+      let bubbleInterval;
+      let isGameRunning = false;
+
+      // Function to create and animate a single bubble
+      const createBubble = () => {
+        if (!isGameRunning) return;
+
+        const bubble = document.createElement("div");
+        const bubbleSizeClass = `bubble-${Math.floor(Math.random() * 3) + 1}`;
+        bubble.classList.add("bubble", bubbleSizeClass);
+
+        // Randomly position the bubble
+        const gameAreaWidth = gameArea.offsetWidth;
+        const bubbleWidth = bubble.offsetWidth;
+        const randomX = Math.random() * (gameAreaWidth - bubbleWidth);
+        bubble.style.left = `${randomX}px`;
+
+        // Randomize the speed, now much slower
+        const speed = Math.random() * 3 + 1;
+        let currentY = -50;
+
+        const animateBubble = () => {
+          if (!isGameRunning) {
+            bubble.remove();
+            return;
+          }
+
+          currentY += speed;
+          bubble.style.transform = `translateY(-${currentY}px)`;
+
+          if (currentY > gameArea.offsetHeight + 50) {
+            bubble.remove();
+          } else {
+            requestAnimationFrame(animateBubble);
+          }
+        };
+
+        // Change event from 'click' to 'mouseenter'
+        bubble.addEventListener("mouseenter", () => {
+          if (isGameRunning) {
+            // Prevent multiple hits on the same bubble
+            if (bubble.classList.contains("popped")) return;
+            bubble.classList.add("popped");
+
+            // Update score
+            score++;
+            updateScore();
+
+            // Change color
+            bubble.style.backgroundColor = "#fde047";
+
+            // Remove bubble after a short delay
+            setTimeout(() => {
+              bubble.remove();
+            }, 200);
+          }
+        });
+
+        gameArea.appendChild(bubble);
+        animateBubble();
+      };
+
+      // Function to update the score display
+      const updateScore = () => {
+        scoreDisplay.textContent = `Score: ${score}`;
+      };
+
+      // Function to start the game
+      const startGame = () => {
+        if (isGameRunning) return;
+        isGameRunning = true;
+        score = 0;
+        timeLeft = 120;
+        updateScore();
+        updateTime();
+        startButton.textContent = "Stop Game";
+
+        gameArea.innerHTML = "";
+
+        // Clear any previous timers
+        if (bubbleInterval) clearInterval(bubbleInterval);
+        if (gameTimer) clearTimeout(gameTimer);
+
+        bubbleInterval = setInterval(() => {
+          createBubble();
+        }, 500);
+
+        // Update the timer every second
+        gameTimer = setInterval(() => {
+          timeLeft--;
+          updateTime();
+          if (timeLeft <= 0) {
+            stopGame();
+            startGame();
+          }
+        }, 1000);
+      };
+
+      // Function to update the time display
+      const updateTime = () => {
+        timeDisplay.textContent = `Time: ${timeLeft}s`;
+      };
+
+      // Function to stop the game
+      const stopGame = () => {
+        isGameRunning = false;
+        startButton.textContent = "Start Game";
+        clearInterval(bubbleInterval);
+        clearInterval(gameTimer); // Make sure to clear the game timer too
+      };
+
+      // Event listener for the start/stop button
+      startButton.addEventListener("click", () => {
+        if (isGameRunning) {
+          stopGame();
+        } else {
+          startGame();
+        }
+      });
+    </script>
+  </body>
+</html>

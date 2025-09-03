@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Comparison Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #111827;
+        color: #e5e7eb;
+      }
+
+      .chart-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+      }
+
+      #tooltip {
+        position: absolute;
+        background-color: rgba(31, 41, 55, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        z-index: 50;
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen p-4">
+    <div
+      class="bg-gray-900 rounded-3xl shadow-2xl p-6 sm:p-10 w-full max-w-6xl flex flex-col space-y-8"
+    >
+      <!-- Header -->
+      <h1 class="text-3xl sm:text-4xl font-bold text-white text-center pb-4">
+        Dynamic Stock Tracker
+      </h1>
+      <div
+        class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0"
+      >
+        <div
+          class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-8"
+        >
+          <div class="flex items-center space-x-2">
+            <label for="stock1-select" class="text-gray-400">Stock 1:</label>
+            <select
+              id="stock1-select"
+              class="bg-gray-800 text-gray-100 rounded-lg px-3 py-2 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+            >
+              <option value="AAPL">Apple (AAPL)</option>
+              <option value="GOOG">Google (GOOG)</option>
+              <option value="MSFT">Microsoft (MSFT)</option>
+              <option value="AMZN">Amazon (AMZN)</option>
+              <option value="TSLA">Tesla (TSLA)</option>
+              <option value="META">Meta (META)</option>
+              <option value="NFLX">Netflix (NFLX)</option>
+              <option value="NVDA">Nvidia (NVDA)</option>
+              <option value="PYPL">PayPal (PYPL)</option>
+              <option value="ADBE">Adobe (ADBE)</option>
+              <option value="INTC">Intel (INTC)</option>
+              <option value="CSCO">Cisco (CSCO)</option>
+              <option value="ORCL">Oracle (ORCL)</option>
+              <option value="IBM">IBM (IBM)</option>
+              <option value="AMD">AMD (AMD)</option>
+            </select>
+          </div>
+          <div class="flex items-center space-x-2">
+            <label for="stock2-select" class="text-gray-400">Stock 2:</label>
+            <select
+              id="stock2-select"
+              class="bg-gray-800 text-gray-100 rounded-lg px-3 py-2 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+            >
+              <option value="MSFT">Microsoft (MSFT)</option>
+              <option value="AAPL">Apple (AAPL)</option>
+              <option value="GOOG">Google (GOOG)</option>
+              <option value="AMZN">Amazon (AMZN)</option>
+              <option value="TSLA">Tesla (TSLA)</option>
+              <option value="META">Meta (META)</option>
+              <option value="NFLX">Netflix (NFLX)</option>
+              <option value="NVDA">Nvidia (NVDA)</option>
+              <option value="PYPL">PayPal (PYPL)</option>
+              <option value="ADBE">Adobe (ADBE)</option>
+              <option value="INTC">Intel (INTC)</option>
+              <option value="CSCO">Cisco (CSCO)</option>
+              <option value="ORCL">Oracle (ORCL)</option>
+              <option value="IBM">IBM (IBM)</option>
+              <option value="AMD">AMD (AMD)</option>
+            </select>
+          </div>
+        </div>
+        <button
+          id="pauseButton"
+          class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+        >
+          Pause Simulation
+        </button>
+      </div>
+
+      <!-- Stock Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Stock 1 Card -->
+        <div class="bg-gray-800 rounded-2xl shadow-xl p-6 relative">
+          <!-- Header with Badge, Symbol, and Name -->
+          <div class="flex items-start space-x-4 mb-4">
+            <div
+              class="bg-purple-600 rounded-full w-12 h-12 flex-shrink-0 flex items-center justify-center text-xl font-bold"
+            >
+              1
+            </div>
+            <div>
+              <h2 id="stock1-symbol" class="text-2xl font-bold text-purple-400">
+                AAPL
+              </h2>
+              <p id="stock1-name" class="text-sm text-gray-400">Apple Inc.</p>
+            </div>
+          </div>
+          <!-- Price and Change Section -->
+          <div class="mt-4">
+            <p id="currentPrice1" class="text-5xl font-bold text-green-400"></p>
+            <p id="change1" class="text-2xl font-semibold mt-1"></p>
+          </div>
+        </div>
+
+        <!-- Stock 2 Card -->
+        <div class="bg-gray-800 rounded-2xl shadow-xl p-6 relative">
+          <!-- Header with Badge, Symbol, and Name -->
+          <div class="flex items-start space-x-4 mb-4">
+            <div
+              class="bg-blue-600 rounded-full w-12 h-12 flex-shrink-0 flex items-center justify-center text-xl font-bold"
+            >
+              2
+            </div>
+            <div>
+              <h2 id="stock2-symbol" class="text-2xl font-bold text-blue-400">
+                MSFT
+              </h2>
+              <p id="stock2-name" class="text-sm text-gray-400">
+                Microsoft Corp.
+              </p>
+            </div>
+          </div>
+          <!-- Price and Change Section -->
+          <div class="mt-4">
+            <p id="currentPrice2" class="text-5xl font-bold text-green-400"></p>
+            <p id="change2" class="text-2xl font-semibold mt-1"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combined Chart Container -->
+      <div class="bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6">
+        <h3 class="text-xl font-semibold mb-4 text-center">Price Comparison</h3>
+        <div class="chart-container rounded-2xl bg-gray-900 overflow-hidden">
+          <canvas id="stockChart" class="w-full h-full"></canvas>
+          <div id="tooltip" class="rounded-lg shadow-xl px-4 py-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("stockChart");
+      const ctx = canvas.getContext("2d");
+      const stock1Select = document.getElementById("stock1-select");
+      const stock2Select = document.getElementById("stock2-select");
+      const pauseButton = document.getElementById("pauseButton");
+
+      const stock1SymbolEl = document.getElementById("stock1-symbol");
+      const stock1NameEl = document.getElementById("stock1-name");
+      const currentPrice1El = document.getElementById("currentPrice1");
+      const change1El = document.getElementById("change1");
+
+      const stock2SymbolEl = document.getElementById("stock2-symbol");
+      const stock2NameEl = document.getElementById("stock2-name");
+      const currentPrice2El = document.getElementById("currentPrice2");
+      const change2El = document.getElementById("change2");
+
+      const tooltipEl = document.getElementById("tooltip");
+
+      // Simulated stock data models with more companies
+      const stocks = {
+        AAPL: {
+          name: "Apple Inc.",
+          price: 150,
+          volatility: 0.8,
+          color: "#A855F7",
+        },
+        GOOG: {
+          name: "Alphabet Inc.",
+          price: 120,
+          volatility: 1.2,
+          color: "#3B82F6",
+        },
+        MSFT: {
+          name: "Microsoft Corp.",
+          price: 180,
+          volatility: 0.9,
+          color: "#F97316",
+        },
+        AMZN: {
+          name: "Amazon.com Inc.",
+          price: 175,
+          volatility: 1.5,
+          color: "#FCD34D",
+        },
+        TSLA: {
+          name: "Tesla Inc.",
+          price: 220,
+          volatility: 2.5,
+          color: "#EF4444",
+        },
+        META: {
+          name: "Meta Platforms Inc.",
+          price: 160,
+          volatility: 1.8,
+          color: "#8B5CF6",
+        },
+        NFLX: {
+          name: "Netflix Inc.",
+          price: 300,
+          volatility: 2.1,
+          color: "#DC2626",
+        },
+        NVDA: {
+          name: "Nvidia Corp.",
+          price: 500,
+          volatility: 3.0,
+          color: "#4ADE80",
+        },
+        PYPL: {
+          name: "PayPal Holdings Inc.",
+          price: 85,
+          volatility: 1.0,
+          color: "#60A5FA",
+        },
+        ADBE: {
+          name: "Adobe Inc.",
+          price: 400,
+          volatility: 1.3,
+          color: "#F9A8D4",
+        },
+        INTC: {
+          name: "Intel Corp.",
+          price: 45,
+          volatility: 0.7,
+          color: "#6B7280",
+        },
+        CSCO: {
+          name: "Cisco Systems Inc.",
+          price: 50,
+          volatility: 0.6,
+          color: "#10B981",
+        },
+        ORCL: {
+          name: "Oracle Corp.",
+          price: 75,
+          volatility: 0.9,
+          color: "#FB923C",
+        },
+        IBM: {
+          name: "Intl. Business Machines",
+          price: 140,
+          volatility: 0.5,
+          color: "#3B82F6",
+        },
+        AMD: {
+          name: "Advanced Micro Devices",
+          price: 100,
+          volatility: 1.9,
+          color: "#93C5FD",
+        },
+      };
+
+      let dataPoints1 = [];
+      let dataPoints2 = [];
+      const maxPoints = 150;
+      let timeOffset = -maxPoints * 1000;
+      let isPaused = false;
+      const timezone = "Asia/Kolkata"; // Set to India Standard Time
+
+      function resizeCanvas() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      function getNextDataPoint(stock) {
+        let change = (Math.random() - 0.5) * 2 * stock.volatility;
+        stock.price += change;
+        stock.price = Math.max(
+          stock.price - 2,
+          Math.min(stock.price + 2, stock.price)
+        ); // A simple form of price constraint
+        return {
+          time: new Date(Date.now() + timeOffset),
+          price: stock.price,
+        };
+      }
+
+      function drawChart() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const allPrices = [...dataPoints1, ...dataPoints2].map((p) => p.price);
+        const priceMin = Math.min(...allPrices);
+        const priceMax = Math.max(...allPrices);
+
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+          const y = (i / 4) * canvas.height;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+
+        const drawLine = (dataPoints, color) => {
+          ctx.beginPath();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          const xStep = canvas.width / (maxPoints - 1);
+          let firstPoint = true;
+          dataPoints.forEach((point, index) => {
+            const x = index * xStep;
+            const y =
+              canvas.height -
+              ((point.price - priceMin) / (priceMax - priceMin)) *
+                canvas.height;
+            if (firstPoint) {
+              ctx.moveTo(x, y);
+              firstPoint = false;
+            } else {
+              ctx.lineTo(x, y);
+            }
+          });
+          ctx.stroke();
+        };
+
+        drawLine(dataPoints1, stocks[stock1Select.value].color);
+        drawLine(dataPoints2, stocks[stock2Select.value].color);
+      }
+
+      function updateLabels(stockId, currentPriceEl, changeEl, dataPoints) {
+        if (dataPoints.length > 1) {
+          const currentPrice = dataPoints[dataPoints.length - 1].price;
+          const lastPriceBefore = dataPoints[dataPoints.length - 2].price;
+          const changeValue = currentPrice - lastPriceBefore;
+          const changePercent = (changeValue / lastPriceBefore) * 100;
+
+          currentPriceEl.textContent = `₹${currentPrice.toFixed(2)}`;
+          changeEl.textContent = `${
+            changeValue > 0 ? "+" : ""
+          }${changeValue.toFixed(2)} (${changePercent.toFixed(2)}%)`;
+          changeEl.style.color = changeValue >= 0 ? "#34D399" : "#EF4444"; // Green or Red
+        }
+      }
+
+      function animate() {
+        if (isPaused) return;
+
+        const stock1 = stocks[stock1Select.value];
+        const stock2 = stocks[stock2Select.value];
+
+        dataPoints1.push(getNextDataPoint(stock1));
+        dataPoints2.push(getNextDataPoint(stock2));
+        timeOffset += 1000;
+
+        if (dataPoints1.length > maxPoints) dataPoints1.shift();
+        if (dataPoints2.length > maxPoints) dataPoints2.shift();
+
+        drawChart();
+        updateLabels(1, currentPrice1El, change1El, dataPoints1);
+        updateLabels(2, currentPrice2El, change2El, dataPoints2);
+
+        requestAnimationFrame(animate);
+      }
+
+      function resetData() {
+        dataPoints1 = [];
+        dataPoints2 = [];
+        timeOffset = -maxPoints * 1000;
+
+        const stock1 = stocks[stock1Select.value];
+        const stock2 = stocks[stock2Select.value];
+
+        stock1SymbolEl.textContent = stock1Select.value;
+        stock1NameEl.textContent = stock1.name;
+        stock2SymbolEl.textContent = stock2Select.value;
+        stock2NameEl.textContent = stock2.name;
+
+        for (let i = 0; i < maxPoints; i++) {
+          dataPoints1.push(getNextDataPoint(stocks[stock1Select.value]));
+          dataPoints2.push(getNextDataPoint(stocks[stock2Select.value]));
+        }
+      }
+
+      // Handle select changes
+      stock1Select.addEventListener("change", resetData);
+      stock2Select.addEventListener("change", resetData);
+
+      // Handle pause/resume button
+      pauseButton.addEventListener("click", () => {
+        isPaused = !isPaused;
+        if (isPaused) {
+          pauseButton.textContent = "Resume Simulation";
+        } else {
+          pauseButton.textContent = "Pause Simulation";
+          animate(); // Restart the animation loop
+        }
+      });
+
+      // Handle mouse movement for tooltip
+      canvas.addEventListener("mousemove", (e) => {
+        // Only show the tooltip when the simulation is paused
+        if (!isPaused) {
+          tooltipEl.style.opacity = "0";
+          return;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const dataIndex = Math.floor((mouseX / canvas.width) * (maxPoints - 1));
+
+        if (dataIndex >= 0 && dataIndex < dataPoints1.length) {
+          const point1 = dataPoints1[dataIndex];
+          const point2 = dataPoints2[dataIndex];
+
+          tooltipEl.style.left = `${e.clientX + 15}px`;
+          tooltipEl.style.top = `${e.clientY - 40}px`;
+          tooltipEl.style.opacity = "1";
+
+          const timeOptions = {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+            timeZone: timezone, // Use the specified timezone
+          };
+          const timeStr = point1.time.toLocaleTimeString("en-US", timeOptions);
+          const dateOptions = {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            timeZone: timezone, // Use the specified timezone
+          };
+          const dateStr = point1.time.toLocaleDateString("en-US", dateOptions);
+
+          tooltipEl.innerHTML = `
+                    <p class="text-xs font-bold">${dateStr} ${timeStr}</p>
+                    <p class="text-sm text-purple-400">${
+                      stock1Select.value
+                    }: ₹${point1.price.toFixed(2)}</p>
+                    <p class="text-sm text-blue-400">${
+                      stock2Select.value
+                    }: ₹${point2.price.toFixed(2)}</p>
+                `;
+        }
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        tooltipEl.style.opacity = "0";
+      });
+
+      window.onload = function () {
+        resetData();
+        animate();
+      };
+    </script>
+  </body>
+</html>
