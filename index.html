@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Zone — 20+ Mini Games</title>
+    <meta
+      name="description"
+      content="Game Zone: a sleek dashboard for 20+ free mini games — search, filter, and play."
+    />
+    <style>
+      :root {
+        --bg: #0e0f13;
+        --card: #151823;
+        --card-2: #111420;
+        --text: #e8ecf1;
+        --muted: #a9b2c7;
+        --brand: #7c6cff;
+        --brand-2: #4cc9f0;
+        --accent: #22c55e;
+        --danger: #ef4444;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+        --radius-lg: 24px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(
+            1200px 800px at 80% -20%,
+            rgba(124, 108, 255, 0.25),
+            transparent 60%
+          ),
+          radial-gradient(
+            1000px 700px at -10% 120%,
+            rgba(76, 201, 240, 0.18),
+            transparent 60%
+          ),
+          var(--bg);
+        color: var(--text);
+        font: 500 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Inter,
+          "Noto Sans", Arial, sans-serif;
+        letter-spacing: 0.1px;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 28px 18px 60px;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(10px);
+        background: linear-gradient(
+          180deg,
+          rgba(14, 15, 19, 0.85),
+          rgba(14, 15, 19, 0.6)
+        );
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        z-index: 10;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 18px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--text);
+      }
+      .logo svg {
+        width: 36px;
+        height: 36px;
+        filter: drop-shadow(0 6px 14px rgba(124, 108, 255, 0.45));
+      }
+      .logo .title {
+        font-weight: 800;
+        font-size: 20px;
+        letter-spacing: 0.4px;
+      }
+      .chip {
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        color: var(--muted);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+        align-items: center;
+        padding: 26px 0 10px;
+      }
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+      .hero-card {
+        border-radius: var(--radius-lg);
+        background: linear-gradient(
+          180deg,
+          rgba(21, 24, 35, 0.85),
+          rgba(21, 24, 35, 0.65)
+        );
+        padding: 22px;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .hero h1 {
+        margin: 0 0 8px;
+        font-size: 34px;
+        line-height: 1.15;
+      }
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .stats {
+        display: flex;
+        gap: 14px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+      .stat {
+        background: linear-gradient(180deg, var(--card), var(--card-2));
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .controls {
+        margin-top: 18px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .input {
+        flex: 1;
+        min-width: 220px;
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 10px 12px;
+        color: var(--text);
+      }
+      .select,
+      .btn {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 10px 12px;
+        color: var(--text);
+      }
+      .btn {
+        cursor: pointer;
+        transition: 0.2s transform ease, 0.2s background ease;
+      }
+      .btn.primary {
+        background: linear-gradient(90deg, var(--brand), var(--brand-2));
+        border: 0;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .tags {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .tag {
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+      }
+      .tag.active {
+        background: linear-gradient(
+          90deg,
+          rgba(124, 108, 255, 0.25),
+          rgba(76, 201, 240, 0.18)
+        );
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 20px;
+      }
+      @media (max-width: 1100px) {
+        .grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 520px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: linear-gradient(
+          180deg,
+          rgba(20, 23, 35, 0.95),
+          rgba(20, 23, 35, 0.78)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius);
+        overflow: hidden;
+        position: relative;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        min-height: 220px;
+      }
+      .thumb {
+        height: 120px;
+        background: radial-gradient(
+            500px 140px at 20% -20%,
+            rgba(124, 108, 255, 0.45),
+            transparent 60%
+          ),
+          radial-gradient(
+            500px 120px at 120% 140%,
+            rgba(76, 201, 240, 0.35),
+            transparent 60%
+          ),
+          linear-gradient(135deg, #1e2335, #121726);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 44px;
+      }
+      .content {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+      }
+      .title {
+        font-weight: 700;
+      }
+      .desc {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .badge {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--muted);
+      }
+      .actions {
+        margin-top: auto;
+        display: flex;
+        gap: 8px;
+      }
+      .actions .btn {
+        flex: 1;
+        text-align: center;
+      }
+      .fav {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.25);
+        cursor: pointer;
+      }
+      .fav.active {
+        background: rgba(124, 108, 255, 0.35);
+        border-color: transparent;
+      }
+
+      .footer {
+        margin: 36px auto 0;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      /* Modal */
+      dialog {
+        border: 0;
+        border-radius: 20px;
+        padding: 0;
+        width: min(720px, 92vw);
+        background: linear-gradient(180deg, #121725, #0f1422);
+        color: var(--text);
+        box-shadow: var(--shadow);
+      }
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.65);
+      }
+      .modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .modal-body {
+        padding: 18px;
+      }
+      .close {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+
+      /* Toggle */
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+      }
+      .switch {
+        position: relative;
+        width: 50px;
+        height: 28px;
+        background: #2a2f45;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .knob {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 24px;
+        height: 24px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.25s;
+      }
+      body.light {
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --card-2: #f3f5fb;
+        --text: #12131a;
+        --muted: #515a6e;
+      }
+      body.light .knob {
+        left: 24px;
+      }
+      body.light dialog {
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav class="nav">
+        <a class="logo" href="#" aria-label="Game Zone Home">
+          <svg
+            viewBox="0 0 64 64"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7c6cff" />
+                <stop offset="100%" stop-color="#4cc9f0" />
+              </linearGradient>
+            </defs>
+            <path
+              fill="url(#g)"
+              d="M14 20c-6 0-10 4-10 10s4 10 10 10h36c6 0 10-4 10-10s-4-10-10-10H14zm9 10a5 5 0 110-10 5 5 0 010 10zm18 9a3 3 0 110-6 3 3 0 010 6zM49 24a3 3 0 110-6 3 3 0 010 6z"
+            />
+          </svg>
+          <div class="title">Game Zone</div>
+          <span class="chip">20+ Games · Free</span>
+          <div class="toggle" title="Toggle light/dark">
+            <div style="font-size: 14px">🌙</div>
+            <div class="switch"><div class="knob"></div></div>
+          </div>
+        </a>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-card">
+          <h1>
+            Welcome to
+            <span
+              style="
+                background: linear-gradient(
+                  90deg,
+                  var(--brand),
+                  var(--brand-2)
+                );
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+              "
+              >Game Zone</span
+            >
+            🎯
+          </h1>
+          <p>
+            A sleek dashboard that brings 20+ fun and interactive mini‑games
+            under one roof. Search, filter and play in one click.
+          </p>
+          <div class="stats">
+            <div class="stat">🎮 <b id="stat-total">0</b>&nbsp;Games</div>
+            <div class="stat">⭐ <b id="stat-favs">0</b>&nbsp;Favorites</div>
+            <div class="stat">🆕 <b id="stat-new">0</b>&nbsp;New</div>
+          </div>
+          <div class="controls">
+            <input
+              id="search"
+              class="input"
+              placeholder="Search games (e.g., Sudoku, Balls, Drawing)…"
+            />
+            <select id="sort" class="select" aria-label="Sort games">
+              <option value="az">Sort: A → Z</option>
+              <option value="za">Sort: Z → A</option>
+              <option value="new">Sort: New First</option>
+            </select>
+            <button id="reset" class="btn" title="Reset filters">Reset</button>
+          </div>
+          <div id="tagRow" class="tags" aria-label="Filter by category"></div>
+        </div>
+        <div class="hero-card">
+          <h3 style="margin: 0 0 10px">🚀 About the Project</h3>
+          <p style="margin: 0 0 12px">
+            Play, enjoy, and challenge yourself with different games — all in
+            one place!
+          </p>
+          <ul style="margin: 0 0 14px 18px; color: var(--muted)">
+            <li>Fast search · category filters · favorites</li>
+            <li>Beautiful responsive UI (mobile‑friendly)</li>
+            <li>Modal details + quick launch</li>
+          </ul>
+          <button class="btn primary" id="quickPlay">
+            🎲 I'm Feeling Lucky
+          </button>
+        </div>
+      </section>
+
+      <section id="grid" class="grid" aria-live="polite"></section>
+
+      <p class="footer">
+        Built with ❤️ for fun. Add your own game files inside
+        <code>/games/&lt;slug&gt;/index.html</code> and the Play button will
+        open them.
+      </p>
+    </main>
+
+    <dialog id="modal">
+      <div class="modal-head">
+        <div style="font-weight: 700" id="m-title">Game</div>
+        <button class="close" id="m-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="m-desc" style="margin-top: 0"></p>
+        <div class="badges" id="m-badges"></div>
+        <div style="display: flex; gap: 10px; margin-top: 16px">
+          <a class="btn primary" id="m-play" target="_blank" rel="noopener"
+            >▶ Play Now</a
+          >
+          <button class="btn" id="m-fav">☆ Add to Favorites</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script>
+      // --- Data ---------------------------------------------------------------
+      const TAGS = [
+        { id: "all", name: "All" },
+        { id: "arcade", name: "Arcade" },
+        { id: "puzzle", name: "Puzzle" },
+        { id: "board", name: "Board" },
+        { id: "utility", name: "Utility" },
+        { id: "logic", name: "Logic" },
+      ];
+
+      const games = [
+        {
+          title: "Catch the Balls",
+          slug: "catch-the-balls",
+          desc: "Catch the correct balls, avoid the red ones!",
+          icon: "🏀",
+          tags: ["arcade"],
+          status: "new",
+          link: "ca",
+        },
+        {
+          title: "Dice Mover",
+          slug: "dice-mover",
+          desc: "Roll the dice (1–6) and move!",
+          icon: "🎲",
+          tags: ["arcade", "logic"],
+          link: "dice_move.html",
+        },
+        {
+          title: "Sudoku",
+          slug: "sudoku",
+          desc: "Solve challenging Sudoku puzzles.",
+          icon: "🧩",
+          tags: ["puzzle", "logic"],
+          link: "games/sudoku/index.html",
+        },
+        {
+          title: "Color Smasher",
+          slug: "color-smasher",
+          desc: "Smash matching colors for points.",
+          icon: "🌈",
+          tags: ["arcade"],
+          link: "games/color-smasher/index.html",
+        },
+        {
+          title: "Cookie Catcher",
+          slug: "cookie-catcher",
+          desc: "Catch cookies as they fall.",
+          icon: "🍪",
+          tags: ["arcade"],
+          link: "games/cookie-catcher/index.html",
+        },
+        {
+          title: "Galaxy Jumper",
+          slug: "galaxy-jumper",
+          desc: "Jump between galaxies and survive!",
+          icon: "🌌",
+          tags: ["arcade"],
+          link: "games/galaxy-jumper/index.html",
+        },
+        {
+          title: "Molmania",
+          slug: "molmania",
+          desc: "Whack the moles before they vanish.",
+          icon: "🐹",
+          tags: ["arcade"],
+          link: "games/molmania/index.html",
+        },
+        {
+          title: "Bubble Cop",
+          slug: "bubble-cop",
+          desc: "Burst bubbles for high scores.",
+          icon: "🔵",
+          tags: ["arcade"],
+          link: "games/bubble-cop/index.html",
+        },
+        {
+          title: "Flip Flopper",
+          slug: "flip-flopper",
+          desc: "Fast‑paced flipping fun.",
+          icon: "🔄",
+          tags: ["arcade"],
+          link: "games/flip-flopper/index.html",
+        },
+        {
+          title: "Signature Drawing",
+          slug: "signature-drawing",
+          desc: "Draw and download your signature.",
+          icon: "✍",
+          tags: ["utility"],
+          link: "games/signature-drawing/index.html",
+        },
+        {
+          title: "Drawing Board",
+          slug: "drawing-board",
+          desc: "Create and save your art.",
+          icon: "🎨",
+          tags: ["utility"],
+          link: "games/drawing-board/index.html",
+        },
+        {
+          title: "Memory Game",
+          slug: "memory-game",
+          desc: "Remember the sequence and win.",
+          icon: "🧠",
+          tags: ["puzzle", "logic"],
+          link: "games/memory-game/index.html",
+        },
+        {
+          title: "Snakes & Ladders",
+          slug: "snakes-ladders",
+          desc: "Classic board game fun.",
+          icon: "🐍",
+          tags: ["board"],
+          link: "games/snakes-ladders/index.html",
+        },
+        {
+          title: "Ball Games",
+          slug: "ball-games",
+          desc: "Multiple ball‑based mini challenges.",
+          icon: "⚽",
+          tags: ["arcade"],
+          link: "games/ball-games/index.html",
+        },
+        {
+          title: "To‑Do List",
+          slug: "todo-list",
+          desc: "Stay organized with your tasks.",
+          icon: "📝",
+          tags: ["utility"],
+          link: "games/todo-list/index.html",
+        },
+        {
+          title: "Weather Dessert",
+          slug: "weather-dessert",
+          desc: "Get live weather updates.",
+          icon: "☁",
+          tags: ["utility"],
+          link: "games/weather-dessert/index.html",
+        },
+        {
+          title: "Stock Reduction",
+          slug: "stock-reduction",
+          desc: "Simple stock tracking challenge.",
+          icon: "📉",
+          tags: ["logic"],
+          link: "games/stock-reduction/index.html",
+        },
+        {
+          title: "Tic‑Tac‑Toe",
+          slug: "tic-tac-toe",
+          desc: "Quick 3‑in‑a‑row duels.",
+          icon: "❌",
+          tags: ["board", "logic"],
+          link: "games/tic-tac-toe/index.html",
+        },
+        {
+          title: "2048 Fusion",
+          slug: "2048-fusion",
+          desc: "Slide tiles to 2048.",
+          icon: "🧮",
+          tags: ["puzzle", "logic"],
+          link: "games/2048-fusion/index.html",
+        },
+        {
+          title: "Brick Blaster",
+          slug: "brick-blaster",
+          desc: "Break all the bricks!",
+          icon: "🧱",
+          tags: ["arcade"],
+          link: "games/brick-blaster/index.html",
+        },
+        {
+          title: "More Games",
+          slug: "more-games",
+          desc: "New games coming soon!",
+          icon: "🎯",
+          tags: ["arcade", "puzzle"],
+          status: "coming",
+          link: "#",
+        },
+      ];
+
+      // --- State --------------------------------------------------------------
+      const qs = (s, el = document) => el.querySelector(s);
+      const qsa = (s, el = document) => [...el.querySelectorAll(s)];
+      const state = {
+        search: "",
+        tag: "all",
+        sort: "az",
+        favs: new Set(JSON.parse(localStorage.getItem("gz.favs") || "[]")),
+      };
+
+      const elGrid = qs("#grid");
+      const elSearch = qs("#search");
+      const elSort = qs("#sort");
+      const elReset = qs("#reset");
+      const elTagRow = qs("#tagRow");
+
+      function saveFavs() {
+        localStorage.setItem("gz.favs", JSON.stringify([...state.favs]));
+      }
+
+      // --- Render Tags --------------------------------------------------------
+      function renderTags() {
+        elTagRow.innerHTML = "";
+        TAGS.forEach((t) => {
+          const b = document.createElement("button");
+          b.className = "tag" + (state.tag === t.id ? " active" : "");
+          b.textContent = t.name;
+          b.onclick = () => {
+            state.tag = t.id;
+            render();
+          };
+          elTagRow.appendChild(b);
+        });
+      }
+
+      // --- Card Template ------------------------------------------------------
+      function cardTemplate(g) {
+        const isFav = state.favs.has(g.slug);
+        const badges = [
+          ...(g.status === "new" ? ["New"] : []),
+          ...(g.status === "coming" ? ["Coming Soon"] : []),
+        ];
+        return `
+        <article class="card" data-title="${g.title.toLowerCase()}" data-tags="${g.tags.join(
+          ","
+        )}">
+          <button class="fav ${
+            isFav ? "active" : ""
+          }" title="Favorite" data-fav="${g.slug}">${isFav ? "★" : "☆"}</button>
+          <div class="thumb" aria-hidden="true">${g.icon}</div>
+          <div class="content">
+            <div class="title">${g.title}</div>
+            <div class="desc">${g.desc}</div>
+            <div class="badges">${badges
+              .map((b) => `<span class="badge">${b}</span>`)
+              .join("")}</div>
+            <div class="actions">
+              <a class="btn primary" href="${g.link}" ${
+          g.link === "#" ? 'data-coming="1"' : ""
+        } target="${g.link === "#" ? "_self" : "_blank"}" rel="${
+          g.link === "#" ? "" : "noopener"
+        }">Play</a>
+              <button class="btn" data-details="${g.slug}">Details</button>
+            </div>
+          </div>
+        </article>`;
+      }
+
+      // --- Render Grid --------------------------------------------------------
+      function filterAndSort(list) {
+        let out = list.filter((g) => {
+          const sOk =
+            g.title.toLowerCase().includes(state.search) ||
+            g.desc.toLowerCase().includes(state.search);
+          const tOk = state.tag === "all" || g.tags.includes(state.tag);
+          return sOk && tOk;
+        });
+        if (state.sort === "az")
+          out.sort((a, b) => a.title.localeCompare(b.title));
+        if (state.sort === "za")
+          out.sort((a, b) => b.title.localeCompare(a.title));
+        if (state.sort === "new")
+          out.sort(
+            (a, b) =>
+              (b.status === "new") - (a.status === "new") ||
+              a.title.localeCompare(b.title)
+          );
+        return out;
+      }
+
+      function render() {
+        const list = filterAndSort(games);
+        elGrid.innerHTML = list.map(cardTemplate).join("");
+        // bind favs
+        qsa("[data-fav]").forEach((btn) => {
+          btn.onclick = () => {
+            const id = btn.getAttribute("data-fav");
+            if (state.favs.has(id)) state.favs.delete(id);
+            else state.favs.add(id);
+            saveFavs();
+            renderStats();
+            render();
+          };
+        });
+        // bind details
+        qsa("[data-details]").forEach((btn) => {
+          btn.onclick = () => openDetails(btn.getAttribute("data-details"));
+        });
+        // guard coming soon
+        qsa("[data-coming]").forEach((a) => {
+          a.addEventListener("click", (e) => {
+            e.preventDefault();
+            toast("🎯 New games coming soon!");
+          });
+        });
+      }
+
+      function renderStats() {
+        qs("#stat-total").textContent = games.length;
+        qs("#stat-favs").textContent = state.favs.size;
+        qs("#stat-new").textContent = games.filter(
+          (g) => g.status === "new"
+        ).length;
+      }
+
+      // --- Details Modal ------------------------------------------------------
+      const modal = qs("#modal");
+      function openDetails(slug) {
+        const g = games.find((x) => x.slug === slug);
+        if (!g) return;
+        qs("#m-title").textContent = g.title;
+        qs("#m-desc").textContent = g.desc;
+        const b = qs("#m-badges");
+        b.innerHTML = "";
+        g.tags.forEach((t) => {
+          const s = document.createElement("span");
+          s.className = "badge";
+          s.textContent = t;
+          b.appendChild(s);
+        });
+        if (g.status === "new") {
+          const s = document.createElement("span");
+          s.className = "badge";
+          s.textContent = "new";
+          b.appendChild(s);
+        }
+        qs("#m-play").href = g.link;
+        const btnFav = qs("#m-fav");
+        const isFav = state.favs.has(g.slug);
+        btnFav.textContent = isFav ? "★ Favorited" : "☆ Add to Favorites";
+        btnFav.onclick = () => {
+          if (isFav) state.favs.delete(g.slug);
+          else state.favs.add(g.slug);
+          saveFavs();
+          renderStats();
+          render();
+          modal.close();
+          toast("Updated favorites");
+        };
+        modal.showModal();
+      }
+      qs("#m-close").onclick = () => modal.close();
+
+      // --- Search / Sort / Reset ---------------------------------------------
+      elSearch.addEventListener("input", (e) => {
+        state.search = e.target.value.trim().toLowerCase();
+        render();
+      });
+      elSort.addEventListener("change", (e) => {
+        state.sort = e.target.value;
+        render();
+      });
+      elReset.addEventListener("click", () => {
+        state.search = "";
+        state.tag = "all";
+        state.sort = "az";
+        elSearch.value = "";
+        elSort.value = "az";
+        renderTags();
+        render();
+      });
+
+      // --- Lucky Play ---------------------------------------------------------
+      qs("#quickPlay").onclick = () => {
+        const playable = games.filter((g) => g.link !== "#");
+        const g = playable[Math.floor(Math.random() * playable.length)];
+        window.open(g.link, "_blank");
+        toast(`Launching ${g.title}… ▶`);
+      };
+
+      // --- Theme Toggle -------------------------------------------------------
+      const switchEl = document.querySelector(".switch");
+      const prefersLight =
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: light)").matches;
+      const storedTheme = localStorage.getItem("gz.theme");
+      if (storedTheme === "light" || (!storedTheme && prefersLight))
+        document.body.classList.add("light");
+      switchEl.addEventListener("click", () => {
+        document.body.classList.toggle("light");
+        localStorage.setItem(
+          "gz.theme",
+          document.body.classList.contains("light") ? "light" : "dark"
+        );
+      });
+
+      // --- Toast --------------------------------------------------------------
+      function toast(msg) {
+        const t = document.createElement("div");
+        t.textContent = msg;
+        t.style.cssText =
+          "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#fff;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);z-index:1000;";
+        document.body.appendChild(t);
+        setTimeout(() => {
+          t.remove();
+        }, 1800);
+      }
+
+      renderTags();
+      render();
+      renderStats();
+    </script>
+  </body>
+</html>
