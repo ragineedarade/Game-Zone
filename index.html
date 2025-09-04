@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Game Zone — 20+ Mini Games</title>
+    <link rel="icon" type="image/png" href="gamezone.png" />
+
     <meta
       name="description"
       content="Game Zone: a sleek dashboard for 20+ free mini games — search, filter, and play."
@@ -34,12 +36,12 @@
         margin: 0;
         background: radial-gradient(
             1200px 800px at 80% -20%,
-            rgba(124, 108, 255, 0.25),
+            rgba(0, 0, 0, 0.25),
             transparent 60%
           ),
           radial-gradient(
             1000px 700px at -10% 120%,
-            rgba(76, 201, 240, 0.18),
+            rgba(0, 0, 0, 0.18),
             transparent 60%
           ),
           var(--bg);
@@ -87,14 +89,20 @@
       }
       .logo .title {
         font-weight: 800;
-        font-size: 20px;
+        font-size: 30px;
         letter-spacing: 0.4px;
       }
       .chip {
-        padding: 6px 10px;
+        position: fixed;
+        top: 50%; /* middle vertically */
+        right: 20px; /* stick to the right */
+        transform: translateY(-50%);
+        padding: 6px 12px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 999px;
         color: var(--muted);
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(6px);
       }
 
       .hero {
@@ -142,11 +150,11 @@
         padding: 10px 14px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 15px;
       }
 
       .controls {
-        margin-top: 18px;
+        margin-top: 28px;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
@@ -175,9 +183,11 @@
       .btn.primary {
         background: linear-gradient(90deg, var(--brand), var(--brand-2));
         border: 0;
+        text-decoration: none;
       }
       .btn:hover {
         transform: translateY(-1px);
+        text-decoration: none;
       }
 
       .tags {
@@ -185,24 +195,27 @@
         gap: 8px;
         margin-top: 12px;
         flex-wrap: wrap;
+         color:black;
       }
-      .tag {
-        padding: 7px 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: var(--muted);
-        cursor: pointer;
-        user-select: none;
-      }
+       .tag {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: black;
+  cursor: pointer;
+  user-select: none;
+  text-transform: capitalize;
+  background-color:  radial-gradient(
+            500px 140px at 20% -20%,
+            rgba(124, 108, 255, 0.45),
+            transparent 60%
+          );
+  transition: 0.3s; /* smooth effect */
+}
       .tag.active {
-        background: linear-gradient(
-          90deg,
-          rgba(124, 108, 255, 0.25),
-          rgba(76, 201, 240, 0.18)
-        );
-        color: var(--text);
-        border-color: rgba(255, 255, 255, 0.16);
-      }
+  background-color: black;
+  color: white;
+}
 
       .grid {
         display: grid;
@@ -304,15 +317,17 @@
         display: grid;
         place-items: center;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.25);
+          background: rgba(60, 59, 60, 0.35);
         cursor: pointer;
       }
       .fav.active {
-        background: rgba(124, 108, 255, 0.35);
+        
+        background: rgba(205, 225, 56, 0.74);
         border-color: transparent;
       }
 
       .footer {
+        margin-top: 100px;
         margin: 36px auto 0;
         color: var(--muted);
         text-align: center;
@@ -351,30 +366,7 @@
       }
 
       /* Toggle */
-      .toggle {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-left: auto;
-      }
-      .switch {
-        position: relative;
-        width: 50px;
-        height: 28px;
-        background: #2a2f45;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .knob {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 24px;
-        height: 24px;
-        background: #fff;
-        border-radius: 50%;
-        transition: 0.25s;
-      }
+
       body.light {
         --bg: #f5f7fb;
         --card: #ffffff;
@@ -393,7 +385,7 @@
   <body>
     <header>
       <nav class="nav">
-        <a class="logo" href="#" aria-label="Game Zone Home">
+        <a class="logo" href="index.html" aria-label="Game Zone Home">
           <svg
             viewBox="0 0 64 64"
             xmlns="http://www.w3.org/2000/svg"
@@ -413,7 +405,6 @@
           <div class="title">Game Zone</div>
           <span class="chip">20+ Games · Free</span>
           <div class="toggle" title="Toggle light/dark">
-            <div style="font-size: 14px">🌙</div>
             <div class="switch"><div class="knob"></div></div>
           </div>
         </a>
@@ -440,10 +431,7 @@
             >
             🎯
           </h1>
-          <p>
-            A sleek dashboard that brings 20+ fun and interactive mini‑games
-            under one roof. Search, filter and play in one click.
-          </p>
+          <br /><br />
           <div class="stats">
             <div class="stat">🎮 <b id="stat-total">0</b>&nbsp;Games</div>
             <div class="stat">⭐ <b id="stat-favs">0</b>&nbsp;Favorites</div>
@@ -483,11 +471,17 @@
 
       <section id="grid" class="grid" aria-live="polite"></section>
 
-      <p class="footer">
-        Built with ❤️ for fun. Add your own game files inside
-        <code>/games/&lt;slug&gt;/index.html</code> and the Play button will
-        open them.
-      </p>
+      <footer class="footer">
+        <p> <br><br>
+            <hr><br>
+          🎮 Built with ❤️ for fun at <strong>Game Zone</strong> — Play 20+ mini
+          games anytime!<br />
+          Add your own game files inside and hit
+          <strong>Play</strong> to launch them. 🚀
+        </p>
+        
+        <p>© 2025 Game Zone | Made for gamers, by Raginee Darade 👾</p>
+      </footer>
     </main>
 
     <dialog id="modal">
@@ -881,22 +875,6 @@
         toast(`Launching ${g.title}… ▶`);
       };
 
-      // --- Theme Toggle -------------------------------------------------------
-      const switchEl = document.querySelector(".switch");
-      const prefersLight =
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: light)").matches;
-      const storedTheme = localStorage.getItem("gz.theme");
-      if (storedTheme === "light" || (!storedTheme && prefersLight))
-        document.body.classList.add("light");
-      switchEl.addEventListener("click", () => {
-        document.body.classList.toggle("light");
-        localStorage.setItem(
-          "gz.theme",
-          document.body.classList.contains("light") ? "light" : "dark"
-        );
-      });
-
       // --- Toast --------------------------------------------------------------
       function toast(msg) {
         const t = document.createElement("div");
@@ -908,10 +886,20 @@
           t.remove();
         }, 1800);
       }
-
       renderTags();
       render();
       renderStats();
+        // --- button change -------------------------------------------------------
+     const tags = document.querySelectorAll('.tag');
+
+tags.forEach(tag => {
+  tag.addEventListener('click', () => {
+    tags.forEach(t => t.classList.remove('active')); // clear all
+    tag.classList.add('active'); // set clicked one
+  });
+});
+
+ 
     </script>
   </body>
 </html>
