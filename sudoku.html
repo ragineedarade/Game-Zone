@@ -19,7 +19,7 @@
         padding: 20px;
         text-align: center;
         position: relative;
-        overflow: hidden;
+        overflow-x: hidden; /* Prevents horizontal scrolling on small screens */
       }
 
       .game-container {
@@ -154,13 +154,14 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
         margin-top: 1rem;
+        width: 100%;
+        max-width: 300px;
       }
 
       .number-pad button {
         background-color: #457b9d;
         color: white;
-        width: 60px;
-        height: 60px;
+        aspect-ratio: 1 / 1; /* Makes buttons square */
         border-radius: 0.75rem;
         font-size: 1.5rem;
         font-weight: 700;
@@ -198,6 +199,43 @@
 
       .hidden {
         display: none;
+      }
+
+      /* Mobile-specific styles */
+      @media (max-width: 500px) {
+        h1 {
+          font-size: 2.5rem;
+        }
+
+        .stats-bar {
+          font-size: 1rem;
+          padding: 0.5rem 1rem;
+        }
+
+        .cell {
+          font-size: 1rem;
+        }
+
+        .action-button {
+          font-size: 1rem;
+          padding: 0.5rem 1.5rem;
+        }
+
+        .number-pad {
+          max-width: 250px;
+        }
+
+        .number-pad button {
+          font-size: 1.2rem;
+        }
+
+        .message-box h2 {
+          font-size: 1.5rem;
+        }
+
+        .message-box p {
+          font-size: 1rem;
+        }
       }
     </style>
   </head>

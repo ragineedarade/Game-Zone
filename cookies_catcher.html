@@ -66,6 +66,7 @@
         background-color: #f1faee;
         box-shadow: inset 0 0 15px rgba(230, 57, 70, 0.2);
         cursor: pointer;
+        touch-action: none; /* Prevents touch scrolling on the canvas */
       }
 
       .start-button {
@@ -215,8 +216,9 @@
 
       // Resize canvas on window resize
       function resizeCanvas() {
-        canvas.width = Math.min(550, window.innerWidth - 40);
-        canvas.height = 350;
+        const gameContainer = document.querySelector(".game-container");
+        canvas.width = Math.min(600, gameContainer.clientWidth - 40);
+        canvas.height = Math.min(400, window.innerHeight * 0.6);
         if (player) {
           player.x = (canvas.width - player.width) / 2;
           player.y = canvas.height - player.height - 10;
@@ -233,6 +235,7 @@
         timerDisplay.textContent = timeLeft;
         messageBox.classList.add("hidden");
         startButton.classList.add("hidden");
+        resizeCanvas(); // Ensure canvas is resized correctly on start
       }
 
       // Game loop
@@ -318,16 +321,31 @@
 
       // Event Listeners
       window.addEventListener("resize", resizeCanvas);
-      canvas.addEventListener("mousemove", (e) => {
-        if (isGameRunning) {
-          const rect = canvas.getBoundingClientRect();
-          player.x = e.clientX - rect.left - player.width / 2;
-          // Keep the player within the canvas boundaries
-          if (player.x < 0) player.x = 0;
-          if (player.x + player.width > canvas.width)
-            player.x = canvas.width - player.width;
+
+      // Unified event handler for both mouse and touch
+      function handleTouchMove(e) {
+        if (!isGameRunning) return;
+
+        e.preventDefault(); // Prevent default mobile scrolling
+        const rect = canvas.getBoundingClientRect();
+        let clientX;
+
+        if (e.type.includes("touch")) {
+          clientX = e.touches[0].clientX;
+        } else {
+          clientX = e.clientX;
         }
-      });
+
+        player.x = clientX - rect.left - player.width / 2;
+        // Keep the player within the canvas boundaries
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > canvas.width)
+          player.x = canvas.width - player.width;
+      }
+
+      canvas.addEventListener("mousemove", handleTouchMove);
+      canvas.addEventListener("touchmove", handleTouchMove);
+
       startButton.addEventListener("click", startGame);
       restartButton.addEventListener("click", startGame);
 

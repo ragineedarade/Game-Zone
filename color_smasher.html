@@ -21,6 +21,10 @@
         text-align: center;
         position: relative;
         overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
       }
 
       .game-container {
@@ -35,23 +39,48 @@
         align-items: center;
         gap: 1.5rem;
         border: 2px solid #f1faee;
+        position: relative; /* Added for message box positioning */
       }
 
       h1 {
         font-family: "Poppins", sans-serif;
-        font-size: 3.5rem;
+        font-size: clamp(2rem, 8vw, 3.5rem);
         font-weight: 900;
-        color: #e63946;
+        background: linear-gradient(
+          45deg,
+          #e63946,
+          #e76f51,
+          #f4a261,
+          #e76f51,
+          #e63946
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
         text-shadow: 3px 3px 6px rgba(241, 250, 238, 0.7);
         letter-spacing: 2px;
         margin-bottom: 1rem;
+        animation: gradient-shift 5s ease-in-out infinite;
+      }
+
+      @keyframes gradient-shift {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
       }
 
       .stats-bar {
         background-color: #f1faee;
         border-radius: 1rem;
         padding: 0.75rem 1.5rem;
-        font-size: 1.5rem;
+        font-size: clamp(1rem, 4vw, 1.5rem);
         font-weight: 700;
         display: flex;
         justify-content: space-between;
@@ -68,8 +97,8 @@
       }
 
       #target-color-display {
-        width: 30px;
-        height: 30px;
+        width: clamp(20px, 5vw, 30px);
+        height: clamp(20px, 5vw, 30px);
         border-radius: 50%;
         border: 3px solid #1d3557;
       }
@@ -80,10 +109,11 @@
         background-color: #f1faee;
         box-shadow: inset 0 0 15px rgba(230, 57, 70, 0.2);
         cursor: pointer;
+        touch-action: none;
       }
 
       .action-button {
-        background: linear-gradient(45deg, #e63946, #e63946);
+        background: linear-gradient(45deg, #e63946, #e76f51);
         color: white;
         padding: 0.75rem 2rem;
         border-radius: 9999px;
@@ -118,6 +148,7 @@
         text-align: center;
         color: #f1faee;
         max-width: 90%;
+        transition: all 0.5s ease-in-out;
       }
 
       .message-box h2 {
@@ -128,6 +159,56 @@
 
       .hidden {
         display: none;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in-out forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.8);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+      }
+
+      /* Score and Combo pop-ups */
+      .score-popup,
+      .combo-popup,
+      .wrong-popup {
+        position: absolute;
+        font-size: 2rem;
+        font-weight: 900;
+        animation: fadeAndRise 1s forwards;
+        pointer-events: none;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      .score-popup {
+        color: #f1faee;
+      }
+      .combo-popup {
+        color: #e63946;
+      }
+      .wrong-popup {
+        color: #e63946;
+      }
+
+      @keyframes fadeAndRise {
+        0% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
       }
     </style>
   </head>
@@ -170,9 +251,11 @@
       let score = 0;
       let isGameRunning = false;
       let balls = [];
+      let particles = [];
       let timer = 60;
       let timerInterval;
       let targetColor;
+      let comboCount = 0;
       const ballColors = [
         "#e63946",
         "#f4a261",
@@ -181,11 +264,17 @@
         "#a8dadc",
         "#1d3557",
       ];
+      const MAX_BALLS = 30;
 
-      // Ball class to manage position, velocity, and drawing
+      // Audio elements
+      const correctSound = new Audio("correct.mp3"); // Replace with your sound file
+      const wrongSound = new Audio("wrong.mp3"); // Replace with your sound file
+
+      // Classes for Ball and Particle
       class Ball {
         constructor(color) {
-          this.radius = 20;
+          this.initialRadius = 20;
+          this.radius = this.initialRadius;
           this.x =
             Math.random() * (canvas.width - this.radius * 2) + this.radius;
           this.y =
@@ -193,18 +282,21 @@
           this.dx = (Math.random() - 0.5) * 4;
           this.dy = (Math.random() - 0.5) * 4;
           this.color = color;
+          this.pulse = 0;
+          this.pulseSpeed = Math.random() * 0.05 + 0.02;
         }
 
         draw() {
+          this.radius = this.initialRadius + Math.sin(this.pulse) * 3;
           ctx.beginPath();
           ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
           ctx.fillStyle = this.color;
           ctx.fill();
           ctx.closePath();
+          this.pulse += this.pulseSpeed;
         }
 
         update() {
-          // Bounce off the walls
           if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
             this.dx = -this.dx;
           }
@@ -216,6 +308,36 @@
           }
           this.x += this.dx;
           this.y += this.dy;
+        }
+      }
+
+      class Particle {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          this.radius = Math.random() * 2 + 1;
+          this.color = color;
+          this.velocity = {
+            x: (Math.random() - 0.5) * 5,
+            y: (Math.random() - 0.5) * 5,
+          };
+          this.alpha = 1;
+        }
+
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = this.alpha;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+          ctx.restore();
+        }
+
+        update() {
+          this.x += this.velocity.x;
+          this.y += this.velocity.y;
+          this.alpha -= 0.02;
         }
       }
 
@@ -235,8 +357,17 @@
           ball.draw();
         });
 
-        // Spawn a new ball every 1-2 seconds
-        if (Math.random() < 0.02) {
+        // Update and draw particles, removing faded ones
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const particle = particles[i];
+          particle.update();
+          particle.draw();
+          if (particle.alpha <= 0) {
+            particles.splice(i, 1);
+          }
+        }
+
+        if (balls.length < MAX_BALLS && Math.random() < 0.03) {
           const randomColor =
             ballColors[Math.floor(Math.random() * ballColors.length)];
           balls.push(new Ball(randomColor));
@@ -250,19 +381,17 @@
         score = 0;
         timer = 60;
         balls = [];
+        particles = [];
         isGameRunning = true;
         scoreDisplay.textContent = score;
         timerDisplay.textContent = timer;
         messageBox.classList.add("hidden");
         startButton.classList.add("hidden");
+        comboCount = 0;
 
-        // Set the first target color
         setNewTargetColor();
-
-        // Start the main game loop
         gameLoop();
 
-        // Start the timer countdown
         timerInterval = setInterval(() => {
           timer--;
           timerDisplay.textContent = timer;
@@ -279,25 +408,60 @@
         messageText.textContent = message;
         finalScore.textContent = score;
         messageBox.classList.remove("hidden");
+        messageBox.classList.add("fade-in");
         restartButton.classList.remove("hidden");
       }
 
       // Set a new random target color
       function setNewTargetColor() {
-        targetColor = ballColors[Math.floor(Math.random() * ballColors.length)];
+        const remainingColors = ballColors.filter(
+          (color) => color !== targetColor
+        );
+        targetColor =
+          remainingColors[Math.floor(Math.random() * remainingColors.length)];
         targetColorDisplay.style.backgroundColor = targetColor;
       }
 
-      // Handle canvas clicks
-      canvas.addEventListener("click", (event) => {
+      // Create a burst of particles
+      function createParticleBurst(x, y, color) {
+        for (let i = 0; i < 20; i++) {
+          particles.push(new Particle(x, y, color));
+        }
+      }
+
+      // Show a temporary score/combo pop-up
+      function showPopup(text, color, x, y) {
+        const popup = document.createElement("div");
+        popup.textContent = text;
+        popup.className = `score-popup ${
+          text === "WRONG!" ? "wrong-popup" : ""
+        } ${text === "COMBO!" ? "combo-popup" : ""}`;
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+        popup.style.color = color;
+        document.body.appendChild(popup);
+        setTimeout(() => {
+          popup.remove();
+        }, 1000);
+      }
+
+      function handleSmash(event) {
         if (!isGameRunning) return;
+        event.preventDefault();
 
         const rect = canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
+        let clientX, clientY;
+        if (event.type === "touchstart") {
+          clientX = event.touches[0].clientX;
+          clientY = event.touches[0].clientY;
+        } else {
+          clientX = event.clientX;
+          clientY = event.clientY;
+        }
 
-        let ballSmashed = false;
-        // Iterate through balls in reverse to avoid skipping elements when removing
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
+
         for (let i = balls.length - 1; i >= 0; i--) {
           const ball = balls[i];
           const distance = Math.sqrt(
@@ -305,32 +469,52 @@
           );
 
           if (distance < ball.radius) {
-            ballSmashed = true;
             if (ball.color === targetColor) {
               score += 10;
+              comboCount++;
+              if (comboCount > 1) {
+                score += (comboCount - 1) * 5; // Bonus points for combos
+                showPopup(
+                  `+${10 + (comboCount - 1) * 5}`,
+                  "#f1faee",
+                  clientX,
+                  clientY
+                );
+                if (comboCount % 3 === 0) {
+                  showPopup("COMBO!", ball.color, clientX, clientY - 50);
+                }
+              } else {
+                showPopup("+10", "#f1faee", clientX, clientY);
+              }
+              correctSound.play();
+              createParticleBurst(ball.x, ball.y, ball.color);
               balls.splice(i, 1);
-              // Every 5 successful smashes, change the target color
-              if (score % 50 === 0) {
+              if (score % 50 === 0 && score !== 0) {
                 setNewTargetColor();
               }
             } else {
               score -= 5;
+              comboCount = 0; // Reset combo on wrong hit
+              wrongSound.play();
+              showPopup("WRONG!", "#e63946", clientX, clientY);
             }
             scoreDisplay.textContent = score;
 
-            // End the game if score drops too low
             if (score < -50) {
               endGame("Too many wrong colors!");
             }
-            break; // Stop after hitting one ball
+            break;
           }
         }
-      });
+      }
 
       // Event Listeners
       window.addEventListener("resize", initializeCanvas);
       startButton.addEventListener("click", startGame);
       restartButton.addEventListener("click", startGame);
+
+      canvas.addEventListener("click", handleSmash);
+      canvas.addEventListener("touchstart", handleSmash);
 
       window.onload = () => {
         initializeCanvas();

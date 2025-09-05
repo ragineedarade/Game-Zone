@@ -87,16 +87,13 @@
       Asteroid Dodger
     </h1>
 
-    <!-- Game UI -->
     <div class="ui-container">
       <div id="scoreDisplay">Score: 0</div>
       <div id="highScoreDisplay">High Score: 0</div>
     </div>
 
-    <!-- Canvas for the game -->
     <canvas id="gameCanvas" width="600" height="400"></canvas>
 
-    <!-- Game Over Modal -->
     <div id="gameOverModal" class="game-over-modal">
       <h2>Game Over!</h2>
       <p id="finalScoreText"></p>
@@ -125,6 +122,7 @@
       const playerSize = 25;
       const playerSpeed = 5;
       let keys = {};
+      let touchTarget = null; // New variable for touch control target
 
       // Asteroid object
       const asteroidMinSize = 15;
@@ -216,11 +214,26 @@
       function update() {
         if (isGameOver) return;
 
-        // Update player position
+        // Update player position based on keyboard input (for desktop)
         if (keys["ArrowUp"] || keys["KeyW"]) player.y -= playerSpeed;
         if (keys["ArrowDown"] || keys["KeyS"]) player.y += playerSpeed;
         if (keys["ArrowLeft"] || keys["KeyA"]) player.x -= playerSpeed;
         if (keys["ArrowRight"] || keys["KeyD"]) player.x += playerSpeed;
+
+        // Update player position based on touch input (for mobile)
+        if (touchTarget) {
+          const dx = touchTarget.x - player.x;
+          const dy = touchTarget.y - player.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance > playerSpeed) {
+            player.x += (dx / distance) * playerSpeed;
+            player.y += (dy / distance) * playerSpeed;
+          } else {
+            player.x = touchTarget.x;
+            player.y = touchTarget.y;
+          }
+        }
 
         // Keep player within canvas boundaries
         player.x = Math.max(
@@ -299,7 +312,9 @@
         gameOverModal.style.display = "block";
       }
 
-      // Event listeners
+      // --- Event Listeners ---
+
+      // Keyboard events (for desktop)
       document.addEventListener("keydown", (e) => {
         keys[e.code] = true;
       });
@@ -308,11 +323,37 @@
         keys[e.code] = false;
       });
 
+      // Touch events (for mobile)
+      canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        touchTarget = {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top,
+        };
+      });
+
+      canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        touchTarget = {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top,
+        };
+      });
+
+      canvas.addEventListener("touchend", (e) => {
+        e.preventDefault();
+        touchTarget = null; // Stop moving when the finger is lifted
+      });
+
+      // Restart button
       restartButton.addEventListener("click", () => {
         init();
         gameLoop();
       });
 
+      // Start the game on page load
       window.onload = function () {
         init();
         gameLoop();

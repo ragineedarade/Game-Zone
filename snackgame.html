@@ -21,16 +21,21 @@
       }
       .game-container {
         text-align: center;
-        padding: 2rem;
+        padding: 1.5rem 1rem; /* Added padding for smaller screens */
         background-color: #2d3748;
         border-radius: 1rem;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
           0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        max-width: 450px; /* Constrain max width for desktop */
+        width: 95%; /* Adjust width for mobile */
       }
       canvas {
         background-color: #4a5568;
         border-radius: 0.5rem;
         border: 2px solid #a0aec0;
+        width: 100%; /* Make canvas responsive */
+        max-width: 400px; /* Keep the original max width */
+        height: auto; /* Maintain aspect ratio */
       }
       h1 {
         font-size: 2.5rem;
@@ -47,16 +52,18 @@
       }
       .score-container {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column; /* Stack scores vertically on mobile */
+        justify-content: center;
+        align-items: center;
         width: 100%;
-        max-width: 400px;
         margin: 0.5rem auto 1rem;
-        padding: 0 1rem;
+        padding: 0;
       }
       .score-item {
         font-size: 1.25rem;
         font-weight: 700;
         color: #cbd5e0;
+        margin-bottom: 0.5rem;
       }
       .game-over-modal {
         position: fixed;
@@ -77,6 +84,7 @@
         text-align: center;
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2),
           0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 90%;
       }
       .modal-content h2 {
         font-size: 2rem;
@@ -102,6 +110,30 @@
       .modal-content button:hover {
         background-color: #90cdf4;
       }
+
+      /* Media Queries for Mobile Responsiveness */
+      @media (min-width: 480px) {
+        /* On screens wider than 480px, arrange scores side-by-side */
+        .score-container {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+        .score-item {
+          margin-bottom: 0;
+        }
+      }
+
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 1.75rem;
+        }
+        .score-heading {
+          font-size: 1rem;
+        }
+        .score-item {
+          font-size: 0.9rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -115,7 +147,6 @@
       <canvas id="gameCanvas" width="400" height="400"></canvas>
     </div>
 
-    <!-- Game Over Modal -->
     <div id="gameOverModal" class="game-over-modal" style="display: none">
       <div class="modal-content">
         <h2>Game Over!</h2>

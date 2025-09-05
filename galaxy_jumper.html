@@ -63,6 +63,7 @@
         background-color: #050510;
         box-shadow: inset 0 0 15px rgba(0, 200, 255, 0.2);
         cursor: pointer;
+        touch-action: none;
       }
 
       .start-button {
@@ -189,6 +190,8 @@
           this.isJumping = false;
           this.gravity = 0.5;
           this.jumpStrength = -12;
+          this.jumpsUsed = 0; // New property for double jump
+          this.maxJumps = 2; // Allow up to two jumps (normal + double jump)
         }
 
         update() {
@@ -201,6 +204,7 @@
             this.y = canvas.height - this.size;
             this.yVelocity = 0;
             this.isJumping = false;
+            this.jumpsUsed = 0; // Reset jumps when player lands
           }
         }
 
@@ -218,9 +222,11 @@
         }
 
         jump() {
-          if (!this.isJumping) {
+          // Only allow a jump if the character is not already at max jumps
+          if (this.jumpsUsed < this.maxJumps) {
             this.yVelocity = this.jumpStrength;
             this.isJumping = true;
+            this.jumpsUsed++;
           }
         }
       }
@@ -450,6 +456,10 @@
         }
       });
       canvas.addEventListener("click", () => player.jump());
+      canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        player.jump();
+      });
       startButton.addEventListener("click", startGame);
       restartButton.addEventListener("click", startGame);
 
